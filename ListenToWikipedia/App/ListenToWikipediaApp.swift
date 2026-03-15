@@ -4,7 +4,7 @@ import SwiftUI
 struct ListenToWikipediaApp: App {
   var body: some Scene {
     WindowGroup {
-      BubblesView()
+      ContentView()
         .environmentObject(AppSettings.shared)
     }
 

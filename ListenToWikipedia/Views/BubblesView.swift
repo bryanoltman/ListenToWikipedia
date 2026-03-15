@@ -59,11 +59,7 @@ enum BubblePhysics {
 /// Provides data and hit testing for the bubbles canvas.
 class BubbleManager: ObservableObject {
   @Published private(set) var bubbles: [Bubble] = []
-  @Published var lastTappedMessage: String? = nil
-  @Published var lastTappedArticleURL: URL? = nil
   var viewWidth: Double = 400
-
-  private var tapClearTask: Task<Void, Never>?
 
   @MainActor
   func addBubble(from edit: WikipediaArticleEdit) {
@@ -86,10 +82,10 @@ class BubbleManager: ObservableObject {
     bubbles.removeAll { currentTime - $0.creationTime > BubblePhysics.lifespan }
   }
 
+  /// Returns the topmost bubble at `point`, or `nil` if none was hit.
   @MainActor
-  func handleTap(at point: CGPoint, time: TimeInterval, in size: CGSize) {
-    for index in bubbles.indices.reversed() {
-      let bubble = bubbles[index]
+  func bubble(at point: CGPoint, time: TimeInterval, in size: CGSize) -> Bubble? {
+    for bubble in bubbles.reversed() {
       let age = time - bubble.creationTime
       guard age >= 0 else { continue }
 
@@ -99,30 +95,11 @@ class BubbleManager: ObservableObject {
 
       let dx = point.x - currentPos.x
       let dy = point.y - currentPos.y
-      let distance = sqrt((dx * dx) + (dy * dy))
-
-      if distance <= radius {
-        showTapMessage(for: bubble)
-        break
+      if sqrt((dx * dx) + (dy * dy)) <= radius {
+        return bubble
       }
     }
-  }
-
-  @MainActor
-  private func showTapMessage(for bubble: Bubble) {
-    lastTappedMessage = bubble.title
-    lastTappedArticleURL = bubble.articleURL
-
-    tapClearTask?.cancel()
-
-    tapClearTask = Task {
-      try? await Task.sleep(nanoseconds: 3_000_000_000)
-      guard !Task.isCancelled else { return }
-      await MainActor.run {
-        self.lastTappedMessage = nil
-        self.lastTappedArticleURL = nil
-      }
-    }
+    return nil
   }
 
   private static func articleURL(language: String, pageTitle: String) -> URL? {
@@ -186,16 +163,10 @@ class BubbleManager: ObservableObject {
 
 // MARK: -
 
+/// Renders and animates bubbles. Knows nothing about websockets, audio, or navigation.
 struct BubblesView: View {
-  @StateObject private var manager = BubbleManager()
-  @StateObject private var service = WikipediaWebSocketService()
-  @EnvironmentObject private var settings: AppSettings
-  @State private var isShowingSettings = false
-  @Environment(\.openURL) private var openURL
-
-  @State private var notePlayer = NotePlayer(
-    program: AppSettings.shared.selectedInstrumentProgram
-  )
+  @ObservedObject var manager: BubbleManager
+  var onTap: (Bubble) -> Void
 
   var body: some View {
     GeometryReader { geometry in
@@ -220,11 +191,7 @@ struct BubblesView: View {
             guard opacity > 0 else { continue }
 
             let scale = BubblePhysics.scale(forAge: age)
-            let position = BubblePhysics.position(
-              for: bubble,
-              age: age,
-              in: size
-            )
+            let position = BubblePhysics.position(for: bubble, age: age, in: size)
 
             var bubbleContext = context
             bubbleContext.opacity = opacity
@@ -237,140 +204,28 @@ struct BubblesView: View {
               height: drawSize
             )
 
-            bubbleContext.fill(
-              Path(ellipseIn: rect),
-              with: .color(bubble.color)
-            )
+            bubbleContext.fill(Path(ellipseIn: rect), with: .color(bubble.color))
 
             let label = Text(bubble.title)
               .font(.system(size: 9, weight: .semibold))
               .foregroundColor(bubble.labelColor)
-            let resolvedLabel = bubbleContext.resolve(label)
-            bubbleContext.draw(resolvedLabel, at: position, anchor: .center)
+            bubbleContext.draw(
+              bubbleContext.resolve(label),
+              at: position,
+              anchor: .center
+            )
           }
         }
         .onTapGesture { location in
           let currentTime = Date.timeIntervalSinceReferenceDate
-          manager.handleTap(at: location, time: currentTime, in: geometry.size)
+          if let bubble = manager.bubble(at: location, time: currentTime, in: geometry.size) {
+            onTap(bubble)
+          }
         }
         .onAppear { manager.viewWidth = geometry.size.width }
-        .onChange(of: geometry.size.width) { manager.viewWidth = geometry.size.width }
+        .onChange(of: geometry.size.width) { _, width in manager.viewWidth = width }
       }
     }
-    .background(
-      Color(red: 0x1B / 255.0, green: 0x20 / 255.0, blue: 0x24 / 255.0)
-        .ignoresSafeArea()
-    )
-    .overlay(alignment: .topTrailing) {
-      VStack(spacing: 8) {
-        #if os(iOS)
-          Button(action: {
-            isShowingSettings = true
-          }) {
-            Image(systemName: "gearshape.fill")
-              .font(.title2)
-              .foregroundColor(.white)
-              .padding()
-              .background(Circle().fill(Color.black.opacity(0.5)))
-          }
-          .buttonStyle(.plain)
-        #endif
-
-        Button(action: {
-          settings.isMuted.toggle()
-        }) {
-          Image(
-            systemName: settings.isMuted
-              ? "speaker.slash.fill" : "speaker.wave.2.fill"
-          )
-          .font(.title2)
-          .foregroundColor(settings.isMuted ? .secondary : .white)
-          .frame(width: 28, height: 28)
-          .padding()
-          .background(Circle().fill(Color.black.opacity(0.5)))
-        }
-        .buttonStyle(.plain)
-      }
-      .padding()
-    }
-    .overlay(alignment: .bottom) {
-      if let message = manager.lastTappedMessage {
-        Button {
-          if let url = manager.lastTappedArticleURL {
-            openURL(url)
-          }
-        } label: {
-          HStack(spacing: 6) {
-            Text(message)
-              .font(.subheadline.bold())
-              .foregroundColor(.white)
-              .multilineTextAlignment(.center)
-            if manager.lastTappedArticleURL != nil {
-              Image(systemName: "arrow.up.right")
-                .font(.caption.bold())
-                .foregroundColor(.white.opacity(0.7))
-            }
-          }
-          .padding(.horizontal, 16)
-          .padding(.vertical, 12)
-          .background(
-            RoundedRectangle(cornerRadius: 12)
-              .fill(Color(white: 0.15))
-              .shadow(color: .black.opacity(0.5), radius: 5, y: 3)
-          )
-        }
-        .buttonStyle(.plain)
-        .padding(.bottom, 40)
-        .transition(.move(edge: .bottom).combined(with: .opacity))
-      }
-    }
-    .animation(
-      .spring(response: 0.3, dampingFraction: 0.7),
-      value: manager.lastTappedMessage
-    )
-    .sheet(isPresented: $isShowingSettings) {
-      SettingsView()
-    }
-    .onAppear {
-      syncConnections(to: settings.selectedLanguageCodes)
-    }
-    .onDisappear {
-      service.disconnectAll()
-    }
-    .onReceive(settings.$selectedLanguageCodes) { codes in
-      syncConnections(to: codes)
-    }
-    .onReceive(settings.$selectedInstrumentProgram) { program in
-      notePlayer.loadInstrument(program: program)
-    }
-    .onReceive(service.eventPublisher) { event in
-      if case .articleEdit(let edit) = event {
-        manager.addBubble(from: edit)
-        if !settings.isMuted,
-          let note = MusicalScale.noteForEdit(
-            changeSize: edit.changeSize,
-            in: settings.currentScale
-          )
-        {
-          notePlayer.play(note: note)
-        }
-      }
-    }
+    .ignoresSafeArea()
   }
-
-  /// Connects to languages that are selected but not yet connected,
-  /// and disconnects languages that are connected but no longer selected.
-  private func syncConnections(to selected: Set<String>) {
-    for lang in service.connectedLanguages where !selected.contains(lang) {
-      service.disconnect(language: lang)
-    }
-    for lang in selected where !service.connectedLanguages.contains(lang) {
-      service.connect(language: lang)
-    }
-  }
-}
-
-#Preview {
-  BubblesView()
-    .environmentObject(AppSettings.shared)
 }
