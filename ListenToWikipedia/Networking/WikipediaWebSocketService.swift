@@ -21,8 +21,6 @@ import Foundation
 @MainActor
 final class WikipediaWebSocketService: ObservableObject {
 
-  // MARK: - Public state
-
   /// The set of language codes that are currently connected.
   @Published private(set) var connectedLanguages: Set<String> = []
 
@@ -30,21 +28,17 @@ final class WikipediaWebSocketService: ObservableObject {
   @Published private(set) var lastEvent: WikipediaEvent?
 
   /// A Combine publisher that emits every parsed event as it arrives.
-  /// Prefer this over `lastEvent` when you need to process every event.
   var eventPublisher: AnyPublisher<WikipediaEvent, Never> {
     eventSubject.eraseToAnyPublisher()
   }
 
-  // MARK: - Private state
-
   private let session = URLSession(configuration: .default)
+  /// Maps language codes to web socket Tasks
   private var socketTasks: [String: URLSessionWebSocketTask] = [:]
   private let eventSubject = PassthroughSubject<WikipediaEvent, Never>()
 
-  // MARK: - Connection management
-
   /// Opens a WebSocket connection for the given Wikipedia language code.
-  /// If a connection for that language already exists this is a no-op.
+  /// If a connection for that language already exists, this is a no-op.
   func connect(language: String) {
     guard socketTasks[language] == nil else { return }
     guard let url = URL(string: "wss://wikimon.hatnote.com/v2/\(language)") else {
@@ -72,8 +66,6 @@ final class WikipediaWebSocketService: ObservableObject {
       disconnect(language: language)
     }
   }
-
-  // MARK: - Message receiving
 
   private func scheduleNextReceive(language: String, task: URLSessionWebSocketTask) {
     task.receive { [weak self] result in

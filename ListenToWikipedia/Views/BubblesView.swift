@@ -44,12 +44,13 @@ enum BubblePhysics {
     return CGPoint(x: currentX, y: currentY)
   }
 
-  /// Maps a Wikipedia edit's byte-change magnitude to a bubble diameter.
-  /// Uses a log scale so both tiny and enormous edits remain visible.
-  static func size(forChangeSize changeSize: Int) -> Double {
+  /// Maps a Wikipedia edit's byte-change magnitude to a bubble diameter,
+  /// clamped to `maxSize`. Uses a log scale so both tiny and enormous edits
+  /// remain visible.
+  static func size(forChangeSize changeSize: Int, maxSize: Double) -> Double {
     let magnitude = Double(abs(changeSize))
-    let scaled = 20.0 + 20.0 * log10(1.0 + magnitude)
-    return scaled
+    let scaled = 20.0 + 50.0 * log10(1.0 + magnitude)
+    return min(scaled, maxSize)
   }
 }
 
@@ -60,6 +61,7 @@ class BubbleManager: ObservableObject {
   @Published private(set) var bubbles: [Bubble] = []
   @Published var lastTappedMessage: String? = nil
   @Published var lastTappedArticleURL: URL? = nil
+  var viewWidth: Double = 400
 
   private var tapClearTask: Task<Void, Never>?
 
@@ -73,9 +75,12 @@ class BubbleManager: ObservableObject {
       normalizedY: Double.random(in: 0.05...0.95),
       color: fill,
       labelColor: label,
-      size: BubblePhysics.size(forChangeSize: edit.changeSize),
+      size: BubblePhysics.size(forChangeSize: edit.changeSize, maxSize: viewWidth / 2),
       title: edit.pageTitle,
-      articleURL: Self.articleURL(language: edit.language, pageTitle: edit.pageTitle)
+      articleURL: Self.articleURL(
+        language: edit.language,
+        pageTitle: edit.pageTitle
+      )
     )
     bubbles.append(newBubble)
     bubbles.removeAll { currentTime - $0.creationTime > BubblePhysics.lifespan }
@@ -124,26 +129,44 @@ class BubbleManager: ObservableObject {
     let encodedTitle =
       pageTitle
       .replacingOccurrences(of: " ", with: "_")
-      .addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? pageTitle
+      .addingPercentEncoding(withAllowedCharacters: .urlPathAllowed)
+      ?? pageTitle
     return URL(string: "https://\(language).wikipedia.org/wiki/\(encodedTitle)")
   }
 
-  // MARK: - Colors matching HatnoteListen's theme
+  // MARK: - Colors
 
   // Base dot colors
-  private static let greenDot  = Color(red: 0x30/255.0, green: 0xDA/255.0, blue: 0x59/255.0)
-  private static let purpleDot = Color(red: 0xCC/255.0, green: 0x67/255.0, blue: 0xCB/255.0)
-  private static let whiteDot  = Color.white
+  private static let greenDot = Color(
+    red: 0x30 / 255.0,
+    green: 0xDA / 255.0,
+    blue: 0x59 / 255.0
+  )
+  private static let purpleDot = Color(
+    red: 0xCC / 255.0,
+    green: 0x67 / 255.0,
+    blue: 0xCB / 255.0
+  )
+  private static let whiteDot = Color.white
 
-  // "Way darker" variants (brightness × 0.3), used as fill for deletions
-  // and as label color for additions (matching HatnoteListen's drawRect logic).
-  private static let darkGreenDot  = Color(red: 0x0E/255.0, green: 0x41/255.0, blue: 0x1B/255.0)
-  private static let darkPurpleDot = Color(red: 0x3D/255.0, green: 0x1F/255.0, blue: 0x3D/255.0)
-  private static let darkWhiteDot  = Color(white: 0.30)
+  // "Way darker" variants (brightness × 0.3), used as fill for deletions and as label color for additions.
+  private static let darkGreenDot = Color(
+    red: 0x0E / 255.0,
+    green: 0x41 / 255.0,
+    blue: 0x1B / 255.0
+  )
+  private static let darkPurpleDot = Color(
+    red: 0x3D / 255.0,
+    green: 0x1F / 255.0,
+    blue: 0x3D / 255.0
+  )
+  private static let darkWhiteDot = Color(white: 0.30)
 
   /// Returns (fill, label) colors for a bubble, matching HatnoteListen's drawRect logic.
   /// Additions: bright fill, dark label. Deletions: dark fill, bright label.
-  private func bubbleColors(for edit: WikipediaArticleEdit) -> (fill: Color, label: Color) {
+  private func bubbleColors(for edit: WikipediaArticleEdit) -> (
+    fill: Color, label: Color
+  ) {
     let isDeletion = edit.changeSize < 0
     if edit.isBot {
       return isDeletion
@@ -166,8 +189,13 @@ class BubbleManager: ObservableObject {
 struct BubblesView: View {
   @StateObject private var manager = BubbleManager()
   @StateObject private var service = WikipediaWebSocketService()
+  @EnvironmentObject private var settings: AppSettings
   @State private var isShowingSettings = false
   @Environment(\.openURL) private var openURL
+
+  @State private var notePlayer = NotePlayer(
+    program: AppSettings.shared.selectedInstrumentProgram
+  )
 
   var body: some View {
     GeometryReader { geometry in
@@ -225,21 +253,45 @@ struct BubblesView: View {
           let currentTime = Date.timeIntervalSinceReferenceDate
           manager.handleTap(at: location, time: currentTime, in: geometry.size)
         }
+        .onAppear { manager.viewWidth = geometry.size.width }
+        .onChange(of: geometry.size.width) { manager.viewWidth = geometry.size.width }
       }
     }
-    .background(Color(red: 0x1B/255.0, green: 0x20/255.0, blue: 0x24/255.0).ignoresSafeArea())
+    .background(
+      Color(red: 0x1B / 255.0, green: 0x20 / 255.0, blue: 0x24 / 255.0)
+        .ignoresSafeArea()
+    )
     .overlay(alignment: .topTrailing) {
-      Button(action: {
-        isShowingSettings = true
-      }) {
-        Image(systemName: "gearshape.fill")
+      VStack(spacing: 8) {
+        #if os(iOS)
+          Button(action: {
+            isShowingSettings = true
+          }) {
+            Image(systemName: "gearshape.fill")
+              .font(.title2)
+              .foregroundColor(.white)
+              .padding()
+              .background(Circle().fill(Color.black.opacity(0.5)))
+          }
+          .buttonStyle(.plain)
+        #endif
+
+        Button(action: {
+          settings.isMuted.toggle()
+        }) {
+          Image(
+            systemName: settings.isMuted
+              ? "speaker.slash.fill" : "speaker.wave.2.fill"
+          )
           .font(.title2)
-          .foregroundColor(.white)
+          .foregroundColor(settings.isMuted ? .secondary : .white)
+          .frame(width: 28, height: 28)
           .padding()
           .background(Circle().fill(Color.black.opacity(0.5)))
-          .padding()
+        }
+        .buttonStyle(.plain)
       }
-      .buttonStyle(.plain)
+      .padding()
     }
     .overlay(alignment: .bottom) {
       if let message = manager.lastTappedMessage {
@@ -280,19 +332,45 @@ struct BubblesView: View {
       SettingsView()
     }
     .onAppear {
-      service.connect(language: "en")
+      syncConnections(to: settings.selectedLanguageCodes)
     }
     .onDisappear {
       service.disconnectAll()
     }
+    .onReceive(settings.$selectedLanguageCodes) { codes in
+      syncConnections(to: codes)
+    }
+    .onReceive(settings.$selectedInstrumentProgram) { program in
+      notePlayer.loadInstrument(program: program)
+    }
     .onReceive(service.eventPublisher) { event in
       if case .articleEdit(let edit) = event {
         manager.addBubble(from: edit)
+        if !settings.isMuted,
+          let note = MusicalScale.noteForEdit(
+            changeSize: edit.changeSize,
+            in: settings.currentScale
+          )
+        {
+          notePlayer.play(note: note)
+        }
       }
+    }
+  }
+
+  /// Connects to languages that are selected but not yet connected,
+  /// and disconnects languages that are connected but no longer selected.
+  private func syncConnections(to selected: Set<String>) {
+    for lang in service.connectedLanguages where !selected.contains(lang) {
+      service.disconnect(language: lang)
+    }
+    for lang in selected where !service.connectedLanguages.contains(lang) {
+      service.connect(language: lang)
     }
   }
 }
 
 #Preview {
   BubblesView()
+    .environmentObject(AppSettings.shared)
 }
