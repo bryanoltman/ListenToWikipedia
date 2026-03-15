@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- ListenToWikipedia — App Icon, Dark Mode variant               -->
+<!-- Deeper black base, more saturated aurora, punchier blooms.    -->
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+
+    <!-- Aurora — more saturated against the deeper black -->
+
+    <!-- Teal — upper-left -->
+    <radialGradient id="a1"
+                    cx="200" cy="200" r="540"
+                    gradientUnits="userSpaceOnUse">
+      <stop offset="0%"   stop-color="#0D5A90" stop-opacity="1.0"/>
+      <stop offset="100%" stop-color="#0D5A90" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Indigo — centre -->
+    <radialGradient id="a2"
+                    cx="530" cy="460" r="400"
+                    gradientUnits="userSpaceOnUse">
+      <stop offset="0%"   stop-color="#1C12B0" stop-opacity="0.65"/>
+      <stop offset="100%" stop-color="#1C12B0" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Violet — lower-right (punchy) -->
+    <radialGradient id="a3"
+                    cx="820" cy="830" r="520"
+                    gradientUnits="userSpaceOnUse">
+      <stop offset="0%"   stop-color="#6A10B4" stop-opacity="0.88"/>
+      <stop offset="100%" stop-color="#6A10B4" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Deep teal — lower-left -->
+    <radialGradient id="a4"
+                    cx="140" cy="840" r="380"
+                    gradientUnits="userSpaceOnUse">
+      <stop offset="0%"   stop-color="#0A6070" stop-opacity="0.60"/>
+      <stop offset="100%" stop-color="#0A6070" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Bubble gradients — slightly more saturated for dark mode -->
+
+    <radialGradient id="wGrad" cx="36%" cy="32%" r="68%">
+      <stop offset="0%"   stop-color="#FFFFFF"/>
+      <stop offset="45%"  stop-color="#D4EEFF"/>
+      <stop offset="100%" stop-color="#7CAED4"/>
+    </radialGradient>
+
+    <radialGradient id="gGrad" cx="36%" cy="32%" r="68%">
+      <stop offset="0%"   stop-color="#A0FFBE"/>
+      <stop offset="40%"  stop-color="#30E060"/>
+      <stop offset="100%" stop-color="#097830"/>
+    </radialGradient>
+
+    <radialGradient id="pGrad" cx="36%" cy="32%" r="68%">
+      <stop offset="0%"   stop-color="#F8A8FF"/>
+      <stop offset="40%"  stop-color="#D268D8"/>
+      <stop offset="100%" stop-color="#600888"/>
+    </radialGradient>
+
+    <!-- Bloom filters -->
+    <filter id="blurL"  x="-55%" y="-55%" width="210%" height="210%">
+      <feGaussianBlur stdDeviation="24"/>
+    </filter>
+    <filter id="blurM"  x="-55%" y="-55%" width="210%" height="210%">
+      <feGaussianBlur stdDeviation="20"/>
+    </filter>
+    <filter id="blurS"  x="-55%" y="-55%" width="210%" height="210%">
+      <feGaussianBlur stdDeviation="14"/>
+    </filter>
+    <filter id="blurXS" x="-55%" y="-55%" width="210%" height="210%">
+      <feGaussianBlur stdDeviation="10"/>
+    </filter>
+
+  </defs>
+
+  <!-- Background — near-black with aurora overlays -->
+  <rect width="1024" height="1024" fill="#030610"/>
+  <rect width="1024" height="1024" fill="url(#a1)"/>
+  <rect width="1024" height="1024" fill="url(#a2)"/>
+  <rect width="1024" height="1024" fill="url(#a3)"/>
+  <rect width="1024" height="1024" fill="url(#a4)"/>
+
+  <!-- Sound-wave rings — slightly more visible on deeper black -->
+  <circle cx="478" cy="508" r="172"
+          fill="none" stroke="white" stroke-width="2.5" stroke-opacity="0.26"/>
+  <circle cx="478" cy="508" r="264"
+          fill="none" stroke="white" stroke-width="2.0" stroke-opacity="0.19"/>
+  <circle cx="478" cy="508" r="356"
+          fill="none" stroke="white" stroke-width="1.6" stroke-opacity="0.13"/>
+  <circle cx="478" cy="508" r="448"
+          fill="none" stroke="white" stroke-width="1.2" stroke-opacity="0.08"/>
+
+  <!-- Bubble blooms -->
+  <circle cx="248" cy="286" r="90"  fill="#80B4FF" opacity="0.18" filter="url(#blurM)"/>
+  <circle cx="394" cy="556" r="230" fill="#80C0FF" opacity="0.15" filter="url(#blurL)"/>
+  <circle cx="650" cy="366" r="185" fill="#30E060" opacity="0.19" filter="url(#blurL)"/>
+  <circle cx="670" cy="668" r="138" fill="#D268D8" opacity="0.21" filter="url(#blurM)"/>
+  <circle cx="502" cy="756" r="60"  fill="#30E060" opacity="0.15" filter="url(#blurS)"/>
+
+  <!-- Bubbles -->
+  <circle cx="248" cy="286" r="76"  fill="url(#wGrad)"/>
+  <circle cx="394" cy="556" r="206" fill="url(#wGrad)"/>
+  <circle cx="650" cy="366" r="156" fill="url(#gGrad)"/>
+  <circle cx="670" cy="668" r="114" fill="url(#pGrad)"/>
+  <circle cx="502" cy="756" r="46"  fill="url(#gGrad)" fill-opacity="0.68"/>
+
+</svg>

@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- ListenToWikipedia — App Icon, Default/Light variant            -->
+<!-- Designed for iOS 26 / macOS 26 aesthetic                       -->
+<!-- Import into Icon Composer as the "background" source image,    -->
+<!-- or use as a standalone 1024×1024 icon.                         -->
+<!--                                                                 -->
+<!-- Visual concept: three Wikipedia-edit bubbles                   -->
+<!--   • White  = registered-user edits (dominant, lower-left)      -->
+<!--   • Green  = anonymous-user edits  (secondary, upper-right)    -->
+<!--   • Purple = bot edits             (accent, lower-right)       -->
+<!-- … floating above concentric ripple rings that represent sound. -->
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         AURORA BACKGROUND — four overlapping radial gradients
+         create a multi-colour mesh reminiscent of iOS 26 colours.
+         ═══════════════════════════════════════════════════════════ -->
+
+    <!-- Teal bloom — upper-left -->
+    <radialGradient id="a1"
+                    cx="200" cy="200" r="540"
+                    gradientUnits="userSpaceOnUse">
+      <stop offset="0%"   stop-color="#0B4E80" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#0B4E80" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Indigo bloom — centre -->
+    <radialGradient id="a2"
+                    cx="530" cy="460" r="400"
+                    gradientUnits="userSpaceOnUse">
+      <stop offset="0%"   stop-color="#18109A" stop-opacity="0.60"/>
+      <stop offset="100%" stop-color="#18109A" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Violet bloom — lower-right -->
+    <radialGradient id="a3"
+                    cx="820" cy="830" r="520"
+                    gradientUnits="userSpaceOnUse">
+      <stop offset="0%"   stop-color="#5C0E9A" stop-opacity="0.80"/>
+      <stop offset="100%" stop-color="#5C0E9A" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Deep teal bloom — lower-left (warms up the bottom edge) -->
+    <radialGradient id="a4"
+                    cx="140" cy="840" r="380"
+                    gradientUnits="userSpaceOnUse">
+      <stop offset="0%"   stop-color="#095568" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#095568" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         BUBBLE GRADIENTS — off-centre radial to imply roundness
+         without skeuomorphic glass highlights.
+         ═══════════════════════════════════════════════════════════ -->
+
+    <!-- White / cool-blue bubble -->
+    <radialGradient id="wGrad" cx="36%" cy="32%" r="68%">
+      <stop offset="0%"   stop-color="#FFFFFF"/>
+      <stop offset="48%"  stop-color="#DAEEFF"/>
+      <stop offset="100%" stop-color="#88B4D8"/>
+    </radialGradient>
+
+    <!-- Green bubble -->
+    <radialGradient id="gGrad" cx="36%" cy="32%" r="68%">
+      <stop offset="0%"   stop-color="#90FFB4"/>
+      <stop offset="42%"  stop-color="#2CD860"/>
+      <stop offset="100%" stop-color="#086E2C"/>
+    </radialGradient>
+
+    <!-- Purple bubble -->
+    <radialGradient id="pGrad" cx="36%" cy="32%" r="68%">
+      <stop offset="0%"   stop-color="#F09CFF"/>
+      <stop offset="42%"  stop-color="#C860CC"/>
+      <stop offset="100%" stop-color="#54087C"/>
+    </radialGradient>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         BLOOM FILTERS — coloured glow behind each bubble.
+         Large stdDeviation = soft, wide halo; modern "neon on dark"
+         look that replaces the old drop-shadow/glass style.
+         ═══════════════════════════════════════════════════════════ -->
+
+    <filter id="blurL" x="-55%" y="-55%" width="210%" height="210%">
+      <feGaussianBlur stdDeviation="22"/>
+    </filter>
+    <filter id="blurM" x="-55%" y="-55%" width="210%" height="210%">
+      <feGaussianBlur stdDeviation="18"/>
+    </filter>
+    <filter id="blurS" x="-55%" y="-55%" width="210%" height="210%">
+      <feGaussianBlur stdDeviation="13"/>
+    </filter>
+    <filter id="blurXS" x="-55%" y="-55%" width="210%" height="210%">
+      <feGaussianBlur stdDeviation="9"/>
+    </filter>
+
+  </defs>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       BACKGROUND
+       ══════════════════════════════════════════════════════════════ -->
+  <rect width="1024" height="1024" fill="#05091A"/>
+  <rect width="1024" height="1024" fill="url(#a1)"/>
+  <rect width="1024" height="1024" fill="url(#a2)"/>
+  <rect width="1024" height="1024" fill="url(#a3)"/>
+  <rect width="1024" height="1024" fill="url(#a4)"/>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       SOUND-WAVE RIPPLE RINGS
+       Concentric circles centred on the composition's visual core.
+       Each ring is bolder and more prominent than the previous set.
+       ══════════════════════════════════════════════════════════════ -->
+  <circle cx="478" cy="508" r="172"
+          fill="none" stroke="white" stroke-width="2.5" stroke-opacity="0.22"/>
+  <circle cx="478" cy="508" r="264"
+          fill="none" stroke="white" stroke-width="2.0" stroke-opacity="0.16"/>
+  <circle cx="478" cy="508" r="356"
+          fill="none" stroke="white" stroke-width="1.6" stroke-opacity="0.11"/>
+  <circle cx="478" cy="508" r="448"
+          fill="none" stroke="white" stroke-width="1.2" stroke-opacity="0.07"/>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       BUBBLE BLOOMS  (rendered before bubbles → appear behind them)
+       Each bloom is a blurred, slightly larger, semi-transparent
+       circle in the bubble's accent colour.
+       ══════════════════════════════════════════════════════════════ -->
+
+  <!-- Small white bloom -->
+  <circle cx="248" cy="286" r="90"  fill="#78AEFF" opacity="0.16" filter="url(#blurM)"/>
+  <!-- Large white bloom -->
+  <circle cx="394" cy="556" r="230" fill="#78BAFF" opacity="0.13" filter="url(#blurL)"/>
+  <!-- Green bloom -->
+  <circle cx="650" cy="366" r="185" fill="#28D860" opacity="0.17" filter="url(#blurL)"/>
+  <!-- Purple bloom -->
+  <circle cx="670" cy="668" r="138" fill="#C860CC" opacity="0.18" filter="url(#blurM)"/>
+  <!-- Tiny green bloom -->
+  <circle cx="502" cy="756" r="60"  fill="#28D860" opacity="0.13" filter="url(#blurS)"/>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       BUBBLES  (clean radial-gradient circles, no highlights)
+       ══════════════════════════════════════════════════════════════ -->
+
+  <!-- Small white — upper-left -->
+  <circle cx="248" cy="286" r="76"  fill="url(#wGrad)"/>
+
+  <!-- Large white — centre-left (dominant element) -->
+  <circle cx="394" cy="556" r="206" fill="url(#wGrad)"/>
+
+  <!-- Medium green — upper-right -->
+  <circle cx="650" cy="366" r="156" fill="url(#gGrad)"/>
+
+  <!-- Small purple — lower-right -->
+  <circle cx="670" cy="668" r="114" fill="url(#pGrad)"/>
+
+  <!-- Tiny green accent — lower-centre -->
+  <circle cx="502" cy="756" r="46"  fill="url(#gGrad)" fill-opacity="0.68"/>
+
+</svg>

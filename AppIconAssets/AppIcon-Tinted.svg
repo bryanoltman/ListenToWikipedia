@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- ListenToWikipedia — App Icon, Tinted / Monochrome variant     -->
+<!--                                                                -->
+<!-- Used by iOS when the user enables "Tinted" icon appearance.   -->
+<!-- The OS treats this as an alpha mask: white areas receive the   -->
+<!-- user's chosen tint colour; black areas are transparent.        -->
+<!--                                                                -->
+<!-- Design: white bubble silhouettes and bold ring arcs on black. -->
+<!-- Simplified — no gradients, no colour. The tint system handles -->
+<!-- the colour at runtime.                                         -->
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 1024 1024" width="1024" height="1024">
+
+  <!-- Mask background (transparent in final composite) -->
+  <rect width="1024" height="1024" fill="#000000"/>
+
+  <!-- Sound-wave rings — bolder than the colour version since this
+       is a monochrome mask; they need to read clearly without colour -->
+  <circle cx="478" cy="508" r="172"
+          fill="none" stroke="white" stroke-width="4"   stroke-opacity="0.42"/>
+  <circle cx="478" cy="508" r="264"
+          fill="none" stroke="white" stroke-width="3.5" stroke-opacity="0.34"/>
+  <circle cx="478" cy="508" r="356"
+          fill="none" stroke="white" stroke-width="3"   stroke-opacity="0.26"/>
+  <circle cx="478" cy="508" r="448"
+          fill="none" stroke="white" stroke-width="2.5" stroke-opacity="0.18"/>
+
+  <!-- Bubble silhouettes — solid white so iOS can tint them -->
+  <!-- Small — upper-left -->
+  <circle cx="248" cy="286" r="76"  fill="white" fill-opacity="0.82"/>
+  <!-- Large — centre-left (dominant) -->
+  <circle cx="394" cy="556" r="206" fill="white" fill-opacity="1.0"/>
+  <!-- Medium — upper-right -->
+  <circle cx="650" cy="366" r="156" fill="white" fill-opacity="0.94"/>
+  <!-- Small — lower-right -->
+  <circle cx="670" cy="668" r="114" fill="white" fill-opacity="0.90"/>
+  <!-- Tiny accent — lower-centre -->
+  <circle cx="502" cy="756" r="46"  fill="white" fill-opacity="0.74"/>
+
+</svg>
