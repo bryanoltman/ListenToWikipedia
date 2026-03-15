@@ -69,6 +69,19 @@ struct AboutView: View {
               .underline()
           }
           .buttonStyle(.plain)
+
+          Button {
+            if let url = URL(string: "https://musical-artifacts.com/artifacts/784") {
+              openURL(url)
+            }
+          } label: {
+            Text(
+              "\"Series 30 Synth (Nokia 1208 Profile)\" sound font by MIDAPMI, licensed under CC BY 3.0"
+            )
+            .font(.body)
+            .underline()
+          }
+          .buttonStyle(.plain)
         }
       }
       .padding(24)
