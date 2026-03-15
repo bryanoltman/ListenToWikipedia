@@ -12,8 +12,6 @@ struct SettingsView: View {
     #endif
   }
 
-  // MARK: - macOS: TabView presented by the Settings scene (Cmd+,)
-
   #if os(macOS)
     private var macOSBody: some View {
       TabView {
@@ -37,8 +35,6 @@ struct SettingsView: View {
       }
     }
   #endif
-
-  // MARK: - iOS: Sheet with NavigationStack
 
   private var iOSBody: some View {
     NavigationStack {
@@ -68,8 +64,6 @@ struct SettingsView: View {
       }
     }
   }
-
-  // MARK: - Shared
 
   private func languageToggleBinding(for language: WikipediaLanguage)
     -> Binding<Bool>

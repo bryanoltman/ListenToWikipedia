@@ -1,7 +1,6 @@
 import Foundation
 
 /// Parses the preset headers from a SoundFont 2 (.sf2) file.
-/// Ported from HatnoteListen's HATSoundFont.m.
 enum SoundFontParser {
   // SoundFont 2.01 SFPresetHeader is exactly 38 bytes (packed):
   //   char     presetName[20]
@@ -13,6 +12,11 @@ enum SoundFontParser {
   //   uint32_t morphology
   private static let headerSize = 38
   private static let nameLength = 20
+
+  static let bundledSoundFontURL: URL? = Bundle.main.url(
+    forResource: "Nokia_S30",
+    withExtension: "sf2"
+  )
 
   /// Returns all instruments found in the given SF2 file, sorted by name.
   static func instruments(at url: URL) -> [SoundFontInstrument] {

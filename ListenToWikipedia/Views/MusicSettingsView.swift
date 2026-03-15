@@ -63,10 +63,7 @@ struct MusicSettingsView: View {
     #endif
     .task {
       guard instruments.isEmpty,
-        let url = Bundle.main.url(
-          forResource: "Nokia_S30",
-          withExtension: "sf2"
-        )
+        let url = SoundFontParser.bundledSoundFontURL
       else { return }
       instruments = SoundFontParser.instruments(at: url)
     }

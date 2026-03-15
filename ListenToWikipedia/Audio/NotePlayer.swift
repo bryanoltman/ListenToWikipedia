@@ -1,11 +1,11 @@
 import AVFoundation
 
-/// Plays MIDI notes from the Nokia_S30 sound font file.
+/// Plays MIDI notes using the app's bundled SoundFont file.
 class NotePlayer {
   private let engine = AVAudioEngine()
   private let sampler = AVAudioUnitSampler()
 
-  private let soundFontURL: URL? = Bundle.main.url(forResource: "Nokia_S30", withExtension: "sf2")
+  private let soundFontURL: URL? = SoundFontParser.bundledSoundFontURL
 
   // Default to Acoustic Guitar (Nylon)
   init(program: UInt8 = 24) {
@@ -38,10 +38,10 @@ class NotePlayer {
     loadInstrument(program: program)
   }
 
-  /// Switches to the instrument identified by `program` in the Nokia_S30 SoundFont.
+  /// Switches to the instrument identified by `program` in the bundled SoundFont.
   func loadInstrument(program: UInt8) {
     guard let url = soundFontURL else {
-      print("[NotePlayer] Nokia_S30.sf2 not found in bundle")
+      print("[NotePlayer] Bundled SoundFont not found in bundle")
       return
     }
     do {
