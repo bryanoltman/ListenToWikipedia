@@ -141,3 +141,5 @@ Pods/
 /fastlane/fastlane/Appfile
 /Gemfile.lock
 /enterprise/register/Gemfile.lock
+
+.claude
