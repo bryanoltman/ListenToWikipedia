@@ -1,6 +1,6 @@
 import Foundation
 
-enum MusicalMode: String, CaseIterable, Identifiable {
+enum HeptatonicMode: String, CaseIterable, Identifiable {
   case ionian = "Ionian (Major)"
   case dorian = "Dorian"
   case phrygian = "Phrygian"
@@ -66,12 +66,12 @@ enum MusicalKey: String, CaseIterable, Identifiable {
 
 enum MusicalScale {
   /// Generates MIDI note values for a given root, mode, and number of octaves.
-  static func notes(root: UInt8, mode: MusicalMode, octaves: Int = 2) -> [UInt8]
+  static func notes(root: UInt8, intervals: [Int], octaves: Int = 2) -> [UInt8]
   {
     var notes: [UInt8] = [root]
     var current = Int(root)
     for _ in 0..<octaves {
-      for interval in mode.intervals {
+      for interval in intervals {
         current += interval
         guard current <= 127 else { return notes }
         notes.append(UInt8(current))

@@ -7,9 +7,10 @@ class AppSettings: ObservableObject {
   static let shared = AppSettings()
 
   @Published var selectedLanguageCodes: Set<String>
-  @Published var scaleCardinality: ScaleCardinality
+  @Published var scaleType: ScaleType
   @Published var musicalKey: MusicalKey
-  @Published var musicalMode: MusicalMode
+  @Published var heptatonicMode: HeptatonicMode
+  @Published var pentatonicMode: PentatonicMode
   @Published var isMuted: Bool
   /// MIDI program number of the currently selected SF2 instrument (default 24 = Acoustic Guitar).
   @Published var selectedInstrumentProgram: UInt8
@@ -25,6 +26,7 @@ class AppSettings: ObservableObject {
     static let selectedLanguages = "selectedLanguages"
     static let musicalKey = "musicalKey"
     static let musicalMode = "musicalMode"
+    static let pentatonicMode = "pentatonicMode"
     static let isMuted = "isMuted"
     static let selectedInstrumentProgram = "selectedInstrumentProgram"
     static let rootOctave = "rootOctave"
@@ -38,20 +40,27 @@ class AppSettings: ObservableObject {
       defaults.stringArray(forKey: Keys.selectedLanguages) ?? ["en"]
     selectedLanguageCodes = Set(languageCodes)
 
-    let scaleCardinalityRaw = defaults.integer(forKey: Keys.scaleCardinality)
-    scaleCardinality =
-      scaleCardinalityRaw == 0
-      ? ScaleCardinality.pentatonic
-      : ScaleCardinality(rawValue: scaleCardinalityRaw)
-        ?? ScaleCardinality.pentatonic
+    let scaleTypeRaw = defaults.integer(forKey: Keys.scaleCardinality)
+    scaleType =
+      scaleTypeRaw == 0
+      ? ScaleType.pentatonic
+      : ScaleType(rawValue: scaleTypeRaw)
+        ?? ScaleType.pentatonic
 
     let keyRaw =
       defaults.string(forKey: Keys.musicalKey) ?? MusicalKey.b.rawValue
     musicalKey = MusicalKey(rawValue: keyRaw) ?? .b
 
     let modeRaw =
-      defaults.string(forKey: Keys.musicalMode) ?? MusicalMode.dorian.rawValue
-    musicalMode = MusicalMode(rawValue: modeRaw) ?? .dorian
+      defaults.string(forKey: Keys.musicalMode)
+      ?? HeptatonicMode.dorian.rawValue
+    heptatonicMode = HeptatonicMode(rawValue: modeRaw) ?? .dorian
+
+    let pentatonicModeRaw =
+      defaults.string(forKey: Keys.pentatonicMode)
+      ?? PentatonicMode.majorPentatonic.rawValue
+    pentatonicMode =
+      PentatonicMode(rawValue: pentatonicModeRaw) ?? .majorPentatonic
 
     isMuted = defaults.bool(forKey: Keys.isMuted)
 
@@ -76,7 +85,9 @@ class AppSettings: ObservableObject {
     let defaults = UserDefaults.standard
     defaults.set(Array(selectedLanguageCodes), forKey: Keys.selectedLanguages)
     defaults.set(musicalKey.rawValue, forKey: Keys.musicalKey)
-    defaults.set(musicalMode.rawValue, forKey: Keys.musicalMode)
+    defaults.set(heptatonicMode.rawValue, forKey: Keys.musicalMode)
+    defaults.set(scaleType.rawValue, forKey: Keys.scaleCardinality)
+    defaults.set(pentatonicMode.rawValue, forKey: Keys.pentatonicMode)
     defaults.set(isMuted, forKey: Keys.isMuted)
     defaults.set(
       Int(selectedInstrumentProgram),
@@ -88,10 +99,16 @@ class AppSettings: ObservableObject {
 
   /// The MIDI notes that should be used when playing an edit sound.
   var currentScale: [UInt8] {
-    MusicalScale.notes(
+    let intervals: [Int]
+    switch scaleType {
+    case .pentatonic:
+      intervals = pentatonicMode.intervals
+    case .heptatonic:
+      intervals = heptatonicMode.intervals
+    }
+    return MusicalScale.notes(
       root: musicalKey.midiNote(octave: rootOctave),
-      mode: musicalMode,
-      scaleCardinality: scaleCardinality,
+      intervals: intervals,
       octaves: octaveRange
     )
   }

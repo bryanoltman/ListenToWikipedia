@@ -11,10 +11,6 @@ struct MusicSettingsView: View {
 
   var body: some View {
     Form {
-      Section("Playback") {
-        Toggle("Mute", isOn: $settings.isMuted)
-      }
-
       Section("Instrument") {
         if instruments.isEmpty {
           Text("Loading instruments…")
@@ -32,21 +28,29 @@ struct MusicSettingsView: View {
       }
 
       Section("Scale") {
-        Picker("Scale length", selection: $settings.scaleCardinality) {
-          ForEach(ScaleCardinality.allCases) { cardinality in
-            Text(cardinality.description).tag(cardinality)
-          }
-        }
-        
         Picker("Key", selection: $settings.musicalKey) {
           ForEach(MusicalKey.allCases) { key in
             Text(key.rawValue).tag(key)
           }
         }
 
-        Picker("Mode", selection: $settings.musicalMode) {
-          ForEach(MusicalMode.allCases) { mode in
-            Text(mode.rawValue).tag(mode)
+        Picker("Scale type", selection: $settings.scaleType) {
+          ForEach(ScaleType.allCases) { scaleType in
+            Text(scaleType.description).tag(scaleType)
+          }
+        }
+
+        if settings.scaleType == .pentatonic {
+          Picker("Mode", selection: $settings.pentatonicMode) {
+            ForEach(PentatonicMode.allCases) { mode in
+              Text(mode.rawValue).tag(mode)
+            }
+          }
+        } else {
+          Picker("Mode", selection: $settings.heptatonicMode) {
+            ForEach(HeptatonicMode.allCases) { mode in
+              Text(mode.rawValue).tag(mode)
+            }
           }
         }
 

@@ -15,12 +15,15 @@ class NotePlayer {
 
   private func setupAudioSession() {
     #if os(iOS)
-    do {
-      try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
-      try AVAudioSession.sharedInstance().setActive(true)
-    } catch {
-      print("[NotePlayer] Audio session setup failed: \(error)")
-    }
+      do {
+        try AVAudioSession.sharedInstance().setCategory(
+          .playback,
+          mode: .default
+        )
+        try AVAudioSession.sharedInstance().setActive(true)
+      } catch {
+        print("[NotePlayer] Audio session setup failed: \(error)")
+      }
     #endif
   }
 
@@ -52,7 +55,9 @@ class NotePlayer {
         bankLSB: UInt8(kAUSampler_DefaultBankLSB)
       )
     } catch {
-      print("[NotePlayer] SoundFont load failed for program \(program): \(error)")
+      print(
+        "[NotePlayer] SoundFont load failed for program \(program): \(error)"
+      )
     }
   }
 

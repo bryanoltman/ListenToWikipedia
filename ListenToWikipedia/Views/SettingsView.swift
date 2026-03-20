@@ -39,7 +39,11 @@ struct SettingsView: View {
   private var iOSBody: some View {
     NavigationStack {
       Form {
-        Section("Settings") {
+        Section("Playback") {
+          Toggle("Mute", isOn: $settings.isMuted)
+        }
+
+        Section {
           NavigationLink("Music") { MusicSettingsView() }
         }
 
