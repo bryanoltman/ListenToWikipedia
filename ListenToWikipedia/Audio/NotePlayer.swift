@@ -9,6 +9,9 @@ class NotePlayer {
   private let engine = AVAudioEngine()
   private var samplers: [EditSoundType: AVAudioUnitSampler] = [:]
 
+  /// Tracks in-flight stop tasks so a replayed note cancels the previous timeout.
+  private var activeNotes: [NoteKey: Task<Void, Never>] = [:]
+
   private let soundFontURL: URL? = SoundFontParser.bundledSoundFontURL
 
   init(programs: [EditSoundType: UInt8]) {
@@ -72,14 +75,37 @@ class NotePlayer {
     }
   }
 
-  /// Plays a specific MIDI note on the sampler for `type`, then stops it after
-  /// 5 seconds.
+  /// Plays a MIDI note on the sampler for `type`, stopping it after 5 seconds.
+  /// If the same note is already sounding, it is restarted from the beginning.
   func play(note: UInt8, velocity: UInt8 = 100, type: EditSoundType) {
     guard let sampler = samplers[type] else { return }
-    sampler.startNote(note, withVelocity: velocity, onChannel: 0)
-    Task {
-      try? await Task.sleep(nanoseconds: 5_000_000_000)
+
+    let key = NoteKey(type: type, note: note)
+
+    // Cancel the previous timeout and stop the note so the sampler
+    // re-attacks cleanly instead of layering a second voice.
+    if let existing = activeNotes.removeValue(forKey: key) {
+      existing.cancel()
       sampler.stopNote(note, onChannel: 0)
     }
+
+    sampler.startNote(note, withVelocity: velocity, onChannel: 0)
+
+    activeNotes[key] = Task { [weak self] in
+      try? await Task.sleep(nanoseconds: 5_000_000_000)
+      guard !Task.isCancelled else { return }
+      sampler.stopNote(note, onChannel: 0)
+      self?.activeNotes.removeValue(forKey: key)
+    }
+  }
+}
+
+// MARK: - NoteKey
+
+extension NotePlayer {
+  /// Identifies a currently-sounding note by instrument type and MIDI number.
+  private struct NoteKey: Hashable {
+    let type: EditSoundType
+    let note: UInt8
   }
 }
