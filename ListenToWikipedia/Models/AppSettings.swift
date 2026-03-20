@@ -7,6 +7,7 @@ class AppSettings: ObservableObject {
   static let shared = AppSettings()
 
   @Published var selectedLanguageCodes: Set<String>
+  @Published var scaleCardinality: ScaleCardinality
   @Published var musicalKey: MusicalKey
   @Published var musicalMode: MusicalMode
   @Published var isMuted: Bool
@@ -20,6 +21,7 @@ class AppSettings: ObservableObject {
   private var cancellables = Set<AnyCancellable>()
 
   private enum Keys {
+    static let scaleCardinality = "scaleCardinality"
     static let selectedLanguages = "selectedLanguages"
     static let musicalKey = "musicalKey"
     static let musicalMode = "musicalMode"
@@ -32,8 +34,16 @@ class AppSettings: ObservableObject {
   private init() {
     let defaults = UserDefaults.standard
 
-    let codes = defaults.stringArray(forKey: Keys.selectedLanguages) ?? ["en"]
-    selectedLanguageCodes = Set(codes)
+    let languageCodes =
+      defaults.stringArray(forKey: Keys.selectedLanguages) ?? ["en"]
+    selectedLanguageCodes = Set(languageCodes)
+
+    let scaleCardinalityRaw = defaults.integer(forKey: Keys.scaleCardinality)
+    scaleCardinality =
+      scaleCardinalityRaw == 0
+      ? ScaleCardinality.pentatonic
+      : ScaleCardinality(rawValue: scaleCardinalityRaw)
+        ?? ScaleCardinality.pentatonic
 
     let keyRaw =
       defaults.string(forKey: Keys.musicalKey) ?? MusicalKey.b.rawValue
@@ -81,6 +91,7 @@ class AppSettings: ObservableObject {
     MusicalScale.notes(
       root: musicalKey.midiNote(octave: rootOctave),
       mode: musicalMode,
+      scaleCardinality: scaleCardinality,
       octaves: octaveRange
     )
   }

@@ -32,6 +32,12 @@ struct MusicSettingsView: View {
       }
 
       Section("Scale") {
+        Picker("Scale length", selection: $settings.scaleCardinality) {
+          ForEach(ScaleCardinality.allCases) { cardinality in
+            Text(cardinality.description).tag(cardinality)
+          }
+        }
+        
         Picker("Key", selection: $settings.musicalKey) {
           ForEach(MusicalKey.allCases) { key in
             Text(key.rawValue).tag(key)
