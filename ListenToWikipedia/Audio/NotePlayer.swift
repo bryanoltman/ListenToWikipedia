@@ -64,10 +64,4 @@ class NotePlayer {
       self.sampler.stopNote(note, onChannel: 0)
     }
   }
-
-  /// Plays a random note from `scale`, then stops it after 5 seconds.
-  func playRandomNote(from scale: [UInt8], velocity: UInt8 = 100) {
-    guard let note = scale.randomElement() else { return }
-    play(note: note, velocity: velocity)
-  }
 }
