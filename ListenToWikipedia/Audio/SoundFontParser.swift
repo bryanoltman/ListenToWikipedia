@@ -14,7 +14,7 @@ enum SoundFontParser {
   private static let nameLength = 20
 
   static let bundledSoundFontURL: URL? = Bundle.main.url(
-    forResource: "Nokia_S30",
+    forResource: "GeneralUser-GS",
     withExtension: "sf2"
   )
 

@@ -71,12 +71,12 @@ struct AboutView: View {
           .buttonStyle(.plain)
 
           Button {
-            if let url = URL(string: "https://musical-artifacts.com/artifacts/784") {
+            if let url = URL(string: "https://www.schristiancollins.com/generaluser") {
               openURL(url)
             }
           } label: {
             Text(
-              "\"Series 30 Synth (Nokia 1208 Profile)\" sound font by MIDAPMI, licensed under CC BY 3.0"
+              "\"GeneralUser GS\" SoundFont by S. Christian Collins, GeneralUser GS License v2.0"
             )
             .font(.body)
             .underline()
