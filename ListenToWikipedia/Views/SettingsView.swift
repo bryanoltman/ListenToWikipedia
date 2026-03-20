@@ -3,6 +3,7 @@ import SwiftUI
 struct SettingsView: View {
   @EnvironmentObject private var settings: AppSettings
   @Environment(\.dismiss) private var dismiss
+  @State private var isShowingResetConfirmation = false
 
   var body: some View {
     #if os(macOS)
@@ -23,6 +24,21 @@ struct SettingsView: View {
 
         AboutView()
           .tabItem { Label("About", systemImage: "info.circle") }
+      }
+      .safeAreaInset(edge: .bottom) {
+        Button("Reset to Defaults", role: .destructive) {
+          isShowingResetConfirmation = true
+        }
+        .confirmationDialog(
+          "Reset all settings to their defaults?",
+          isPresented: $isShowingResetConfirmation,
+          titleVisibility: .visible
+        ) {
+          Button("Reset", role: .destructive) {
+            settings.resetToDefaults()
+          }
+        }
+        .padding()
       }
       .frame(width: 450, height: 520)
     }
@@ -49,6 +65,21 @@ struct SettingsView: View {
 
         Section {
           NavigationLink("About") { AboutView() }
+        }
+
+        Section {
+          Button("Reset to Defaults", role: .destructive) {
+            isShowingResetConfirmation = true
+          }
+          .confirmationDialog(
+            "Reset all settings to their defaults?",
+            isPresented: $isShowingResetConfirmation,
+            titleVisibility: .visible
+          ) {
+            Button("Reset", role: .destructive) {
+              settings.resetToDefaults()
+            }
+          }
         }
 
         Section("Languages") {
