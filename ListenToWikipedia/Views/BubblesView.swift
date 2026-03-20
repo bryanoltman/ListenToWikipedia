@@ -144,45 +144,52 @@ class BubbleManager: ObservableObject {
     green: 0xDA / 255.0,
     blue: 0x59 / 255.0
   )
+
   private static let purpleDot = Color(
     red: 0xCC / 255.0,
     green: 0x67 / 255.0,
     blue: 0xCB / 255.0
   )
-  private static let whiteDot = Color.white
 
-  // "Way darker" variants (brightness × 0.3), used as fill for deletions and as label color for additions.
+  // Slightly off-white: 80% white blended with the app background (#1B2024).
+  private static let whiteDot = Color(
+    red: 0.80 + 0.20 * (0x1B / 255.0),
+    green: 0.80 + 0.20 * (0x20 / 255.0),
+    blue: 0.80 + 0.20 * (0x24 / 255.0)
+  )
+
+  // Dark variants (brightness × 0.3), used as fill for deletion bubbles.
   private static let darkGreenDot = Color(
     red: 0x0E / 255.0,
     green: 0x41 / 255.0,
     blue: 0x1B / 255.0
   )
+
   private static let darkPurpleDot = Color(
     red: 0x3D / 255.0,
     green: 0x1F / 255.0,
     blue: 0x3D / 255.0
   )
+
   private static let darkWhiteDot = Color(white: 0.30)
 
-  /// Returns (fill, label) colors for a bubble, matching HatnoteListen's drawRect logic.
-  /// Additions: bright fill, dark label. Deletions: dark fill, bright label.
-  private func bubbleColors(for edit: WikipediaArticleEdit) -> (
-    fill: Color, label: Color
-  ) {
+  /// Returns (fill, label) colors for a bubble.
+  /// Additions: bright fill, white label. Deletions: dark fill, bright label.
+  private func bubbleColors(for edit: WikipediaArticleEdit) -> (fill: Color, label: Color) {
     let isDeletion = edit.changeSize < 0
     if edit.isBot {
       return isDeletion
         ? (Self.darkPurpleDot, Self.purpleDot)
-        : (Self.purpleDot, Self.darkPurpleDot)
+        : (Self.purpleDot, .white)
     }
     if edit.isAnonymous {
       return isDeletion
         ? (Self.darkGreenDot, Self.greenDot)
-        : (Self.greenDot, Self.darkGreenDot)
+        : (Self.greenDot, .white)
     }
     return isDeletion
       ? (Self.darkWhiteDot, Self.whiteDot)
-      : (Self.whiteDot, Self.darkWhiteDot)
+      : (Self.whiteDot, .white)
   }
 }
 
@@ -218,7 +225,7 @@ struct BubblesView: View {
             let scale = BubblePhysics.scale(forAge: age)
             let position = BubblePhysics.position(for: bubble, in: size)
 
-            // --- Ripple rings (drawn behind the filled circle) ---
+            // --- Ripple rings ---
             let baseRadius = (bubble.size * scale) / 2
             for ringIndex in 0..<BubblePhysics.rippleCount {
               guard
@@ -257,12 +264,14 @@ struct BubblesView: View {
             )
             bubbleContext.fill(Path(ellipseIn: rect), with: .color(bubble.color))
 
-            // --- Title label (same fade as bubble) ---
+            // --- Title label ---
             let label = Text(bubble.title)
               .font(.system(size: 9, weight: .semibold))
               .foregroundColor(bubble.labelColor)
-            bubbleContext.draw(
-              bubbleContext.resolve(label),
+            var labelContext = bubbleContext
+            labelContext.addFilter(.shadow(color: .black.opacity(0.7), radius: 1, x: 0, y: 0.5))
+            labelContext.draw(
+              labelContext.resolve(label),
               at: position,
               anchor: .center
             )
