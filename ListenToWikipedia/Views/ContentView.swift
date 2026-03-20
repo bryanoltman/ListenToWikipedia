@@ -25,16 +25,14 @@ struct ContentView: View {
     )
     .overlay(alignment: .topTrailing) {
       VStack(spacing: 8) {
-        #if os(iOS)
-          Button(action: { isShowingSettings = true }) {
-            Image(systemName: "gearshape.fill")
-              .font(.title2)
-              .foregroundColor(.white)
-              .padding()
-              .background(Circle().fill(Color.black.opacity(0.5)))
-          }
-          .buttonStyle(.plain)
-        #endif
+        Button(action: { isShowingSettings = true }) {
+          Image(systemName: "gearshape.fill")
+            .font(.title2)
+            .foregroundColor(.white)
+            .padding()
+            .background(Circle().fill(Color.black.opacity(0.5)))
+        }
+        .buttonStyle(.plain)
 
         Button(action: { settings.isMuted.toggle() }) {
           Image(
