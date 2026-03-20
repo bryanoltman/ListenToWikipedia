@@ -1,16 +1,19 @@
 import AVFoundation
 
 /// Plays MIDI notes using the app's bundled SoundFont file.
+///
+/// Manages one `AVAudioUnitSampler` per `EditSoundType`, all attached to a
+/// shared `AVAudioEngine`, so different event types can play different
+/// instruments simultaneously.
 class NotePlayer {
   private let engine = AVAudioEngine()
-  private let sampler = AVAudioUnitSampler()
+  private var samplers: [EditSoundType: AVAudioUnitSampler] = [:]
 
   private let soundFontURL: URL? = SoundFontParser.bundledSoundFontURL
 
-  // Default to Acoustic Guitar (Nylon)
-  init(program: UInt8 = 24) {
+  init(programs: [EditSoundType: UInt8]) {
     setupAudioSession()
-    setupEngine(program: program)
+    setupEngine(programs: programs)
   }
 
   private func setupAudioSession() {
@@ -27,9 +30,13 @@ class NotePlayer {
     #endif
   }
 
-  private func setupEngine(program: UInt8) {
-    engine.attach(sampler)
-    engine.connect(sampler, to: engine.mainMixerNode, format: nil)
+  private func setupEngine(programs: [EditSoundType: UInt8]) {
+    for type in EditSoundType.allCases {
+      let sampler = AVAudioUnitSampler()
+      engine.attach(sampler)
+      engine.connect(sampler, to: engine.mainMixerNode, format: nil)
+      samplers[type] = sampler
+    }
 
     do {
       try engine.start()
@@ -38,15 +45,19 @@ class NotePlayer {
       return
     }
 
-    loadInstrument(program: program)
+    for (type, program) in programs {
+      loadInstrument(program: program, for: type)
+    }
   }
 
-  /// Switches to the instrument identified by `program` in the bundled SoundFont.
-  func loadInstrument(program: UInt8) {
+  /// Switches the instrument for the given `EditSoundType` to the SF2 preset
+  /// identified by `program`.
+  func loadInstrument(program: UInt8, for type: EditSoundType) {
     guard let url = soundFontURL else {
       print("[NotePlayer] Bundled SoundFont not found in bundle")
       return
     }
+    guard let sampler = samplers[type] else { return }
     do {
       try sampler.loadSoundBankInstrument(
         at: url,
@@ -56,17 +67,19 @@ class NotePlayer {
       )
     } catch {
       print(
-        "[NotePlayer] SoundFont load failed for program \(program): \(error)"
+        "[NotePlayer] SoundFont load failed for \(type) program \(program): \(error)"
       )
     }
   }
 
-  /// Plays a specific MIDI note, then stops it after 5 seconds.
-  func play(note: UInt8, velocity: UInt8 = 100) {
+  /// Plays a specific MIDI note on the sampler for `type`, then stops it after
+  /// 5 seconds.
+  func play(note: UInt8, velocity: UInt8 = 100, type: EditSoundType) {
+    guard let sampler = samplers[type] else { return }
     sampler.startNote(note, withVelocity: velocity, onChannel: 0)
     Task {
       try? await Task.sleep(nanoseconds: 5_000_000_000)
-      self.sampler.stopNote(note, onChannel: 0)
+      sampler.stopNote(note, onChannel: 0)
     }
   }
 }

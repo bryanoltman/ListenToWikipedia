@@ -12,8 +12,9 @@ class AppSettings: ObservableObject {
   @Published var heptatonicMode: HeptatonicMode
   @Published var pentatonicMode: PentatonicMode
   @Published var isMuted: Bool
-  /// MIDI program number of the currently selected SF2 instrument (default 24 = Acoustic Guitar).
-  @Published var selectedInstrumentProgram: UInt8
+  /// Per-edit-type MIDI program numbers. Keys are `EditSoundType` cases,
+  /// values are SF2 program numbers from the bundled GeneralUser-GS.sf2.
+  @Published var instrumentPrograms: [EditSoundType: UInt8]
   /// The octave at which the scale root note sits (0–8, default 2 matching HatnoteListen's B2).
   @Published var rootOctave: Int
   /// How many octaves the generated scale spans (1–4, default 2).
@@ -28,7 +29,7 @@ class AppSettings: ObservableObject {
     static let musicalMode = "musicalMode"
     static let pentatonicMode = "pentatonicMode"
     static let isMuted = "isMuted"
-    static let selectedInstrumentProgram = "selectedInstrumentProgram"
+    static let instrumentPrograms = "instrumentPrograms"
     static let rootOctave = "rootOctave"
     static let octaveRange = "octaveRange"
   }
@@ -64,8 +65,7 @@ class AppSettings: ObservableObject {
 
     isMuted = defaults.bool(forKey: Keys.isMuted)
 
-    let savedProgram = defaults.integer(forKey: Keys.selectedInstrumentProgram)
-    selectedInstrumentProgram = savedProgram == 0 ? 24 : UInt8(savedProgram)
+    instrumentPrograms = AppSettings.loadInstrumentPrograms(from: defaults)
 
     rootOctave =
       defaults.object(forKey: Keys.rootOctave) == nil
@@ -81,6 +81,31 @@ class AppSettings: ObservableObject {
       .store(in: &cancellables)
   }
 
+  private static func loadInstrumentPrograms(
+    from defaults: UserDefaults
+  ) -> [EditSoundType: UInt8] {
+    // Try the new per-type dictionary first.
+    if let dict = defaults.dictionary(forKey: Keys.instrumentPrograms)
+      as? [String: Int]
+    {
+      var programs: [EditSoundType: UInt8] = [:]
+      for type in EditSoundType.allCases {
+        if let value = dict[type.rawValue] {
+          programs[type] = UInt8(clamping: value)
+        } else {
+          programs[type] = type.defaultProgram
+        }
+      }
+      return programs
+    }
+
+    return [
+      .addition: EditSoundType.addition.defaultProgram,
+      .subtraction: EditSoundType.subtraction.defaultProgram,
+      .newUser: EditSoundType.newUser.defaultProgram,
+    ]
+  }
+
   private func save() {
     let defaults = UserDefaults.standard
     defaults.set(Array(selectedLanguageCodes), forKey: Keys.selectedLanguages)
@@ -89,10 +114,10 @@ class AppSettings: ObservableObject {
     defaults.set(scaleType.rawValue, forKey: Keys.scaleCardinality)
     defaults.set(pentatonicMode.rawValue, forKey: Keys.pentatonicMode)
     defaults.set(isMuted, forKey: Keys.isMuted)
-    defaults.set(
-      Int(selectedInstrumentProgram),
-      forKey: Keys.selectedInstrumentProgram
-    )
+    let encoded = instrumentPrograms.reduce(into: [String: Int]()) { dict, pair in
+      dict[pair.key.rawValue] = Int(pair.value)
+    }
+    defaults.set(encoded, forKey: Keys.instrumentPrograms)
     defaults.set(rootOctave, forKey: Keys.rootOctave)
     defaults.set(octaveRange, forKey: Keys.octaveRange)
   }

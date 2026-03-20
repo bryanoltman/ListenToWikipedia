@@ -10,10 +10,7 @@ struct ContentView: View {
   @State private var tappedBubble: Bubble?
   @State private var tapClearTask: Task<Void, Never>?
   @Environment(\.openURL) private var openURL
-
-  @State private var notePlayer = NotePlayer(
-    program: AppSettings.shared.selectedInstrumentProgram
-  )
+  @State private var notePlayer = NotePlayer(programs: AppSettings.shared.instrumentPrograms)
 
   var body: some View {
     BubblesView(manager: manager) { bubble in
@@ -74,19 +71,24 @@ struct ContentView: View {
     .onReceive(settings.$selectedLanguageCodes) { codes in
       syncConnections(to: codes)
     }
-    .onReceive(settings.$selectedInstrumentProgram) { program in
-      notePlayer.loadInstrument(program: program)
+    .onReceive(settings.$instrumentPrograms) { programs in
+      for (type, program) in programs {
+        notePlayer.loadInstrument(program: program, for: type)
+      }
     }
     .onReceive(service.eventPublisher) { event in
-      if case .articleEdit(let edit) = event {
+      switch event {
+      case .articleEdit(let edit):
         manager.addBubble(from: edit)
         if !settings.isMuted,
-          let note = MusicalScale.noteForEdit(
-            changeSize: edit.changeSize,
-            in: settings.currentScale
-          )
+          let note = MusicalScale.noteForEdit(changeSize: edit.changeSize, in: settings.currentScale)
         {
-          notePlayer.play(note: note)
+          let type: EditSoundType = edit.changeSize > 0 ? .addition : .subtraction
+          notePlayer.play(note: note, type: type)
+        }
+      case .newUser:
+        if !settings.isMuted, let note = settings.currentScale.randomElement() {
+          notePlayer.play(note: note, type: .newUser)
         }
       }
     }

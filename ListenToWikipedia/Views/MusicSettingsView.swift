@@ -5,25 +5,29 @@ struct MusicSettingsView: View {
 
   @State private var instruments: [SoundFontInstrument] = []
 
-  private var selectedInstrument: SoundFontInstrument? {
-    instruments.first { $0.program == settings.selectedInstrumentProgram }
-  }
-
   var body: some View {
     Form {
-      Section("Instrument") {
+      Section("Instruments") {
         if instruments.isEmpty {
           Text("Loading instruments…")
             .foregroundStyle(.secondary)
         } else {
-          Picker("Instrument", selection: $settings.selectedInstrumentProgram) {
-            ForEach(instruments) { instrument in
-              Text(instrument.name).tag(instrument.program)
+          ForEach(EditSoundType.allCases) { type in
+            Picker(
+              type.displayName,
+              selection: Binding<UInt8>(
+                get: { settings.instrumentPrograms[type] ?? type.defaultProgram },
+                set: { settings.instrumentPrograms[type] = $0 }
+              )
+            ) {
+              ForEach(instruments) { instrument in
+                Text(instrument.name).tag(instrument.program)
+              }
             }
+            #if os(iOS)
+              .pickerStyle(.navigationLink)
+            #endif
           }
-          #if os(iOS)
-            .pickerStyle(.navigationLink)
-          #endif
         }
       }
 

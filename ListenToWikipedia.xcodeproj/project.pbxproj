@@ -29,9 +29,22 @@
 		EDAD5B5E2F66372B00200CA8 /* ListenToWikipediaUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ListenToWikipediaUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		ED846DD12F6CED3700FFB4A5 /* Exceptions for "ListenToWikipedia" folder in "ListenToWikipedia" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"iOS-Info.plist",
+			);
+			target = EDAD5B462F66372900200CA8 /* ListenToWikipedia */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		EDAD5B492F66372900200CA8 /* ListenToWikipedia */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				ED846DD12F6CED3700FFB4A5 /* Exceptions for "ListenToWikipedia" folder in "ListenToWikipedia" target */,
+			);
 			path = ListenToWikipedia;
 			sourceTree = "<group>";
 		};
