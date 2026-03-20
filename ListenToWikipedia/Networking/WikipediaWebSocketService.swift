@@ -87,7 +87,7 @@ final class WikipediaWebSocketService: ObservableObject {
         case .failure(let error):
           // Connection dropped – clean up and let callers observe the change.
           #if DEBUG
-          print("[WikipediaWebSocketService] \(language) error: \(error)")
+            print("[WikipediaWebSocketService] \(language) error: \(error)")
           #endif
           self.socketTasks.removeValue(forKey: language)
           self.connectedLanguages.remove(language)
@@ -98,7 +98,9 @@ final class WikipediaWebSocketService: ObservableObject {
 
   // MARK: - JSON parsing
 
-  private func parse(_ message: URLSessionWebSocketTask.Message, language: String) -> WikipediaEvent? {
+  private func parse(_ message: URLSessionWebSocketTask.Message, language: String)
+    -> WikipediaEvent?
+  {
     let jsonString: String
     switch message {
     case .string(let s):
