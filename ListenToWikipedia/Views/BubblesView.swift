@@ -17,31 +17,56 @@ struct Bubble: Identifiable {
 }
 
 enum BubblePhysics {
-  static let initialUpwardSpeed: Double = 15.0
-  static let upwardAcceleration: Double = 45.0
-  static let lifespan: TimeInterval = 4.0
+  static let lifespan: TimeInterval = 9.0
 
+  // MARK: Entrance
+
+  /// Smooth ease-out cubic scale from 0 → 1 over 0.3s.
   static func scale(forAge age: TimeInterval) -> Double {
-    let bounceDuration = 0.4
-    if age > bounceDuration { return 1.0 }
-
-    let t = age / bounceDuration
-    return 1.0 - cos(t * .pi * 3.0) * exp(-t * 5.0)
+    let entranceDuration = 0.3
+    if age >= entranceDuration { return 1.0 }
+    let t = age / entranceDuration
+    return 1.0 - pow(1.0 - t, 3)
   }
 
-  static func position(for bubble: Bubble, age: TimeInterval, in size: CGSize)
-    -> CGPoint
-  {
-    let startY = bubble.normalizedY * size.height
-    let currentX = bubble.normalizedX * size.width
+  // MARK: Position (static — no drift)
 
-    // Apply kinematic equation for acceleration
-    // distance = (v * t) + (0.5 * a * t^2)
-    let distanceTraveled =
-      (initialUpwardSpeed * age) + (0.5 * upwardAcceleration * (age * age))
-    let currentY = startY - distanceTraveled
+  static func position(for bubble: Bubble, in size: CGSize) -> CGPoint {
+    CGPoint(
+      x: bubble.normalizedX * size.width,
+      y: bubble.normalizedY * size.height
+    )
+  }
 
-    return CGPoint(x: currentX, y: currentY)
+  // MARK: Ripple rings
+
+  static let rippleCount = 2
+  /// Delay between successive rings.
+  static let rippleDelay: TimeInterval = 0.3
+  /// How long each ring animates before disappearing.
+  static let rippleDuration: TimeInterval = 1.0
+  /// Ripple expands outward by this fraction of the bubble's radius.
+  static let rippleExpansionFactor: Double = 0.4
+
+  /// Returns (radius, opacity, lineWidth) for the given ripple ring, or nil if inactive.
+  static func rippleState(
+    index: Int,
+    age: TimeInterval,
+    baseRadius: Double
+  ) -> (radius: Double, opacity: Double, lineWidth: Double)? {
+    let ringStart = Double(index) * rippleDelay
+    let ringAge = age - ringStart
+    guard ringAge >= 0, ringAge <= rippleDuration else { return nil }
+
+    let t = ringAge / rippleDuration
+    // Ease-out quadratic: fast initial expansion, decelerating.
+    let easedT = 1.0 - (1.0 - t) * (1.0 - t)
+
+    let radius = baseRadius + easedT * (baseRadius * rippleExpansionFactor)
+    let opacity = 0.4 * (1.0 - t)
+    let lineWidth = 2.0 - 1.5 * t  // thins from 2pt → 0.5pt
+
+    return (radius, opacity, lineWidth)
   }
 
   /// Maps a Wikipedia edit's byte-change magnitude to a bubble diameter,
@@ -90,7 +115,7 @@ class BubbleManager: ObservableObject {
       guard age >= 0 else { continue }
 
       let currentScale = BubblePhysics.scale(forAge: age)
-      let currentPos = BubblePhysics.position(for: bubble, age: age, in: size)
+      let currentPos = BubblePhysics.position(for: bubble, in: size)
       let radius = (bubble.size * currentScale) / 2
 
       let dx = point.x - currentPos.x
@@ -163,7 +188,7 @@ class BubbleManager: ObservableObject {
 
 // MARK: -
 
-/// Renders and animates bubbles. Knows nothing about websockets, audio, or navigation.
+/// Renders and animates bubbles.
 struct BubblesView: View {
   @ObservedObject var manager: BubbleManager
   var onTap: (Bubble) -> Void
@@ -178,8 +203,8 @@ struct BubblesView: View {
             let age = currentTime - bubble.creationTime
             guard age >= 0 else { continue }
 
-            // Bubbles start fading at age 2.5s and fully disappear at 4s.
-            let fadeDuration: TimeInterval = 1.5
+            // Main circle fades from 6s → 9s (3s fade).
+            let fadeDuration: TimeInterval = 3.0
             let fadeStart: TimeInterval = BubblePhysics.lifespan - fadeDuration
             let opacity =
               if age > fadeStart {
@@ -191,8 +216,35 @@ struct BubblesView: View {
             guard opacity > 0 else { continue }
 
             let scale = BubblePhysics.scale(forAge: age)
-            let position = BubblePhysics.position(for: bubble, age: age, in: size)
+            let position = BubblePhysics.position(for: bubble, in: size)
 
+            // --- Ripple rings (drawn behind the filled circle) ---
+            let baseRadius = (bubble.size * scale) / 2
+            for ringIndex in 0..<BubblePhysics.rippleCount {
+              guard
+                let ring = BubblePhysics.rippleState(
+                  index: ringIndex,
+                  age: age,
+                  baseRadius: baseRadius
+                )
+              else { continue }
+
+              var ringContext = context
+              ringContext.opacity = ring.opacity * opacity
+              let ringRect = CGRect(
+                x: position.x - ring.radius,
+                y: position.y - ring.radius,
+                width: ring.radius * 2,
+                height: ring.radius * 2
+              )
+              ringContext.stroke(
+                Path(ellipseIn: ringRect),
+                with: .color(bubble.color),
+                lineWidth: ring.lineWidth
+              )
+            }
+
+            // --- Filled circle ---
             var bubbleContext = context
             bubbleContext.opacity = opacity
 
@@ -203,9 +255,9 @@ struct BubblesView: View {
               width: drawSize,
               height: drawSize
             )
-
             bubbleContext.fill(Path(ellipseIn: rect), with: .color(bubble.color))
 
+            // --- Title label (same fade as bubble) ---
             let label = Text(bubble.title)
               .font(.system(size: 9, weight: .semibold))
               .foregroundColor(bubble.labelColor)
