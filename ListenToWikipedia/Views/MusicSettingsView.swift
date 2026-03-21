@@ -21,23 +21,34 @@ struct MusicSettingsView: View {
             .foregroundStyle(.secondary)
         } else {
           ForEach(EditSoundType.allCases) { type in
-            Picker(
-              type.displayName,
-              selection: Binding<InstrumentId>(
-                get: { settings.instrumentPrograms[type] ?? type.defaultInstrumentId },
-                set: { settings.instrumentPrograms[type] = $0 }
-              )
-            ) {
-              ForEach(instrumentsByBank, id: \.bank) { group in
-                Section(bankDisplayName(group.bank)) {
-                  ForEach(group.instruments) { instrument in
-                    Text(instrument.name).tag(instrument.id)
+            let selection = Binding<InstrumentId>(
+              get: { settings.instrumentPrograms[type] ?? type.defaultInstrumentId },
+              set: { settings.instrumentPrograms[type] = $0 }
+            )
+            #if os(iOS)
+              NavigationLink {
+                InstrumentPickerView(
+                  selection: selection,
+                  instrumentsByBank: instrumentsByBank
+                )
+                .navigationTitle(type.displayName)
+                .navigationBarTitleDisplayMode(.inline)
+              } label: {
+                LabeledContent(type.displayName) {
+                  Text(instrumentName(for: type))
+                    .foregroundStyle(.secondary)
+                }
+              }
+            #else
+              Picker(type.displayName, selection: selection) {
+                ForEach(instrumentsByBank, id: \.bank) { group in
+                  Section(bankDisplayName(group.bank)) {
+                    ForEach(group.instruments) { instrument in
+                      Text(instrument.name).tag(instrument.id)
+                    }
                   }
                 }
               }
-            }
-            #if os(iOS)
-              .pickerStyle(.navigationLink)
             #endif
           }
         }
@@ -95,11 +106,52 @@ struct MusicSettingsView: View {
     }
   }
 
-  private func bankDisplayName(_ bank: UInt16) -> String {
-    switch bank {
-    case 0: return "General MIDI"
-    case 128: return "GM Percussion"
-    default: return "Bank \(bank)"
+  /// Display name of the currently selected instrument for `type`.
+  private func instrumentName(for type: EditSoundType) -> String {
+    let id = settings.instrumentPrograms[type] ?? type.defaultInstrumentId
+    return instruments.first { $0.id == id }?.name ?? "Unknown"
+  }
+}
+
+private func bankDisplayName(_ bank: UInt16) -> String {
+  switch bank {
+  case 0: return "General MIDI"
+  case 128: return "GM Percussion"
+  default: return "Bank \(bank)"
+  }
+}
+
+// MARK: -
+
+/// A List-based picker that groups instruments by bank with proper section headers.
+/// Replaces `Picker(.navigationLink)` which flattens sections on iOS.
+private struct InstrumentPickerView: View {
+  @Binding var selection: InstrumentId
+  let instrumentsByBank: [(bank: UInt16, instruments: [SoundFontInstrument])]
+
+  var body: some View {
+    List {
+      ForEach(instrumentsByBank, id: \.bank) { group in
+        Section(bankDisplayName(group.bank)) {
+          ForEach(group.instruments) { instrument in
+            Button {
+              selection = instrument.id
+            } label: {
+              HStack {
+                Text(instrument.name)
+                  .foregroundStyle(.primary)
+                Spacer()
+                if instrument.id == selection {
+                  Image(systemName: "checkmark")
+                    .foregroundStyle(.tint)
+                    .fontWeight(.semibold)
+                }
+              }
+            }
+            .buttonStyle(.plain)
+          }
+        }
+      }
     }
   }
 }
