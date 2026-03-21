@@ -14,7 +14,7 @@ class NotePlayer {
 
   private let soundFontURL: URL? = SoundFontParser.bundledSoundFontURL
 
-  init(programs: [EditSoundType: UInt8]) {
+  init(programs: [EditSoundType: InstrumentId]) {
     setupAudioSession()
     setupEngine(programs: programs)
   }
@@ -33,7 +33,7 @@ class NotePlayer {
     #endif
   }
 
-  private func setupEngine(programs: [EditSoundType: UInt8]) {
+  private func setupEngine(programs: [EditSoundType: InstrumentId]) {
     for type in EditSoundType.allCases {
       let sampler = AVAudioUnitSampler()
       engine.attach(sampler)
@@ -48,14 +48,14 @@ class NotePlayer {
       return
     }
 
-    for (type, program) in programs {
-      loadInstrument(program: program, for: type)
+    for (type, instrumentId) in programs {
+      loadInstrument(instrumentId, for: type)
     }
   }
 
   /// Switches the instrument for the given `EditSoundType` to the SF2 preset
-  /// identified by `program`.
-  func loadInstrument(program: UInt8, for type: EditSoundType) {
+  /// identified by `instrumentId`.
+  func loadInstrument(_ instrumentId: InstrumentId, for type: EditSoundType) {
     guard let url = soundFontURL else {
       print("[NotePlayer] Bundled SoundFont not found in bundle")
       return
@@ -64,13 +64,13 @@ class NotePlayer {
     do {
       try sampler.loadSoundBankInstrument(
         at: url,
-        program: program,
-        bankMSB: UInt8(kAUSampler_DefaultMelodicBankMSB),
-        bankLSB: UInt8(kAUSampler_DefaultBankLSB)
+        program: instrumentId.program,
+        bankMSB: instrumentId.bankMSB,
+        bankLSB: instrumentId.bankLSB
       )
     } catch {
       print(
-        "[NotePlayer] SoundFont load failed for \(type) program \(program): \(error)"
+        "[NotePlayer] SoundFont load failed for \(type) \(instrumentId): \(error)"
       )
     }
   }

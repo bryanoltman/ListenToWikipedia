@@ -16,16 +16,16 @@ enum EditSoundType: String, CaseIterable, Identifiable, Codable {
     }
   }
 
-  /// Default MIDI program numbers from the GeneralUser-GS.sf2 soundfont (Bank 0).
+  /// Default SF2 presets from the bundled GeneralUser-GS.sf2 (all bank 0).
   /// These match the instrument families used by listen.hatnote.com:
   ///   - Program 8 "Celeste" — the celesta sounds used for additions
   ///   - Program 7 "Clavinet" — the clav sounds used for subtractions
   ///   - Program 89 "Warm Pad" — approximates the mp3 swell files used for new-user events
-  var defaultProgram: UInt8 {
+  var defaultInstrumentId: InstrumentId {
     switch self {
-    case .addition: return 8
-    case .subtraction: return 7
-    case .newUser: return 89
+    case .addition: return InstrumentId(bank: 0, program: 8)
+    case .subtraction: return InstrumentId(bank: 0, program: 7)
+    case .newUser: return InstrumentId(bank: 0, program: 89)
     }
   }
 }

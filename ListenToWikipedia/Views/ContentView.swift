@@ -77,8 +77,8 @@ struct ContentView: View {
       syncConnections(to: codes)
     }
     .onReceive(settings.$instrumentPrograms) { programs in
-      for (type, program) in programs {
-        notePlayer.loadInstrument(program: program, for: type)
+      for (type, instrumentId) in programs {
+        notePlayer.loadInstrument(instrumentId, for: type)
       }
     }
     .onReceive(service.eventPublisher) { event in

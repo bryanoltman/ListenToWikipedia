@@ -5,6 +5,14 @@ struct MusicSettingsView: View {
 
   @State private var instruments: [SoundFontInstrument] = []
 
+  /// Instruments grouped by bank, sorted by bank number then instrument name.
+  private var instrumentsByBank: [(bank: UInt16, instruments: [SoundFontInstrument])] {
+    let grouped = Dictionary(grouping: instruments, by: \.bank)
+    return grouped.keys.sorted().map { bank in
+      (bank: bank, instruments: grouped[bank]!)
+    }
+  }
+
   var body: some View {
     Form {
       Section("Instruments") {
@@ -15,13 +23,17 @@ struct MusicSettingsView: View {
           ForEach(EditSoundType.allCases) { type in
             Picker(
               type.displayName,
-              selection: Binding<UInt8>(
-                get: { settings.instrumentPrograms[type] ?? type.defaultProgram },
+              selection: Binding<InstrumentId>(
+                get: { settings.instrumentPrograms[type] ?? type.defaultInstrumentId },
                 set: { settings.instrumentPrograms[type] = $0 }
               )
             ) {
-              ForEach(instruments) { instrument in
-                Text(instrument.name).tag(instrument.program)
+              ForEach(instrumentsByBank, id: \.bank) { group in
+                Section(bankDisplayName(group.bank)) {
+                  ForEach(group.instruments) { instrument in
+                    Text(instrument.name).tag(instrument.id)
+                  }
+                }
               }
             }
             #if os(iOS)
@@ -80,6 +92,14 @@ struct MusicSettingsView: View {
         let url = SoundFontParser.bundledSoundFontURL
       else { return }
       instruments = SoundFontParser.instruments(at: url)
+    }
+  }
+
+  private func bankDisplayName(_ bank: UInt16) -> String {
+    switch bank {
+    case 0: return "General MIDI"
+    case 128: return "GM Percussion"
+    default: return "Bank \(bank)"
     }
   }
 }
