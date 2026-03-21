@@ -7,6 +7,9 @@ struct ContentView: View {
   @StateObject private var service = WikipediaWebSocketService()
   @EnvironmentObject private var settings: AppSettings
   @State private var isShowingSettings = false
+  #if os(macOS)
+    @Environment(\.openSettings) private var openSettings
+  #endif
   @State private var tappedBubble: Bubble?
   @State private var tapClearTask: Task<Void, Never>?
   @State private var newUser: WikipediaNewUser?
@@ -24,7 +27,7 @@ struct ContentView: View {
     )
     .overlay(alignment: .topLeading) {
       HStack(spacing: 8) {
-        Button(action: { isShowingSettings = true }) {
+        Button(action: openSettingsAction) {
           Image(systemName: "gearshape.fill")
             .font(.title2)
             .foregroundColor(.white)
@@ -95,6 +98,14 @@ struct ContentView: View {
         }
       }
     }
+  }
+
+  private func openSettingsAction() {
+    #if os(macOS)
+      openSettings()
+    #else
+      isShowingSettings = true
+    #endif
   }
 
   private func showToast(for bubble: Bubble) {
