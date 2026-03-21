@@ -213,9 +213,10 @@ struct BubblesView: View {
               )
             }
 
-            // --- Filled circle ---
+            // --- Filled circle with subtle shadow for depth between overlapping bubbles ---
             var bubbleContext = context
             bubbleContext.opacity = opacity
+            bubbleContext.addFilter(.shadow(color: .black.opacity(0.3), radius: 4, x: 0, y: 0))
 
             let drawSize = bubble.size * scale
             let rect = CGRect(
