@@ -22,7 +22,7 @@ struct ArticleToastView: View {
       .padding(.vertical, 12)
       .background(
         RoundedRectangle(cornerRadius: 12)
-          .fill(Color(white: 0.15))
+          .fill(Color.toastBackground)
           .shadow(color: .black.opacity(0.5), radius: 5, y: 3)
       )
     }

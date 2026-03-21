@@ -135,61 +135,23 @@ class BubbleManager: ObservableObject {
       ?? pageTitle
     return URL(string: "https://\(language).wikipedia.org/wiki/\(encodedTitle)")
   }
-
-  // MARK: - Colors
-
-  // Base dot colors
-  private static let greenDot = Color(
-    red: 0x30 / 255.0,
-    green: 0xDA / 255.0,
-    blue: 0x59 / 255.0
-  )
-
-  private static let purpleDot = Color(
-    red: 0xCC / 255.0,
-    green: 0x67 / 255.0,
-    blue: 0xCB / 255.0
-  )
-
-  // Slightly off-white: 80% white blended with the app background (#1B2024).
-  private static let whiteDot = Color(
-    red: 0.80 + 0.20 * (0x1B / 255.0),
-    green: 0.80 + 0.20 * (0x20 / 255.0),
-    blue: 0.80 + 0.20 * (0x24 / 255.0)
-  )
-
-  // Dark variants (brightness × 0.3), used as fill for deletion bubbles.
-  private static let darkGreenDot = Color(
-    red: 0x0E / 255.0,
-    green: 0x41 / 255.0,
-    blue: 0x1B / 255.0
-  )
-
-  private static let darkPurpleDot = Color(
-    red: 0x3D / 255.0,
-    green: 0x1F / 255.0,
-    blue: 0x3D / 255.0
-  )
-
-  private static let darkWhiteDot = Color(white: 0.30)
-
   /// Returns (fill, label) colors for a bubble.
   /// Additions: bright fill, white label. Deletions: dark fill, bright label.
   private func bubbleColors(for edit: WikipediaArticleEdit) -> (fill: Color, label: Color) {
     let isDeletion = edit.changeSize < 0
     if edit.isBot {
       return isDeletion
-        ? (Self.darkPurpleDot, Self.purpleDot)
-        : (Self.purpleDot, .white)
+        ? (.dotPurpleDark, .dotPurple)
+        : (.dotPurple, .white)
     }
     if edit.isAnonymous {
       return isDeletion
-        ? (Self.darkGreenDot, Self.greenDot)
-        : (Self.greenDot, .white)
+        ? (.dotGreenDark, .dotGreen)
+        : (.dotGreen, .white)
     }
     return isDeletion
-      ? (Self.darkWhiteDot, Self.whiteDot)
-      : (Self.whiteDot, .white)
+      ? (.dotWhiteDark, .dotWhite)
+      : (.dotWhite, .white)
   }
 }
 
@@ -264,17 +226,26 @@ struct BubblesView: View {
             )
             bubbleContext.fill(Path(ellipseIn: rect), with: .color(bubble.color))
 
-            // --- Title label ---
-            let label = Text(bubble.title)
-              .font(.system(size: 9, weight: .semibold))
-              .foregroundColor(bubble.labelColor)
-            var labelContext = bubbleContext
-            labelContext.addFilter(.shadow(color: .black.opacity(0.7), radius: 1, x: 0, y: 0.5))
-            labelContext.draw(
-              labelContext.resolve(label),
-              at: position,
-              anchor: .center
+            // --- Title label (outline + fill for contrast on any background) ---
+            let font = Font.system(size: 9, weight: .medium)
+            let resolvedOutline = bubbleContext.resolve(
+              Text(bubble.title).font(font).foregroundColor(.black.opacity(0.4))
             )
+            let resolvedLabel = bubbleContext.resolve(
+              Text(bubble.title).font(font).foregroundColor(bubble.labelColor)
+            )
+            // Draw dark copies at corner offsets to form a crisp outline.
+            let d: CGFloat = 1.0
+            for dx: CGFloat in [-d, d] {
+              for dy: CGFloat in [-d, d] {
+                bubbleContext.draw(
+                  resolvedOutline,
+                  at: CGPoint(x: position.x + dx, y: position.y + dy),
+                  anchor: .center
+                )
+              }
+            }
+            bubbleContext.draw(resolvedLabel, at: position, anchor: .center)
           }
         }
         .onTapGesture { location in

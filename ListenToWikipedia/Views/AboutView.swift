@@ -20,22 +20,8 @@ struct AboutView: View {
 
           VStack(alignment: .leading, spacing: 8) {
             legendRow(color: .white, label: "Registered user edit")
-            legendRow(
-              color: Color(
-                red: 0x30 / 255,
-                green: 0xDA / 255,
-                blue: 0x59 / 255
-              ),
-              label: "Anonymous edit"
-            )
-            legendRow(
-              color: Color(
-                red: 0xCC / 255,
-                green: 0x67 / 255,
-                blue: 0xCB / 255
-              ),
-              label: "Bot edit"
-            )
+            legendRow(color: .dotGreen, label: "Anonymous edit")
+            legendRow(color: .dotPurple, label: "Bot edit")
           }
 
           Text(

@@ -9,6 +9,8 @@ struct ContentView: View {
   @State private var isShowingSettings = false
   @State private var tappedBubble: Bubble?
   @State private var tapClearTask: Task<Void, Never>?
+  @State private var newUser: WikipediaNewUser?
+  @State private var newUserClearTask: Task<Void, Never>?
   @Environment(\.openURL) private var openURL
   @State private var notePlayer = NotePlayer(programs: AppSettings.shared.instrumentPrograms)
 
@@ -17,10 +19,10 @@ struct ContentView: View {
       showToast(for: bubble)
     }
     .background(
-      Color(red: 0x1B / 255.0, green: 0x20 / 255.0, blue: 0x24 / 255.0)
+      Color.appBackground
         .ignoresSafeArea()
     )
-    .overlay(alignment: .topTrailing) {
+    .overlay(alignment: .topLeading) {
       HStack(spacing: 8) {
         Button(action: { isShowingSettings = true }) {
           Image(systemName: "gearshape.fill")
@@ -42,6 +44,19 @@ struct ContentView: View {
         }
       }
     }
+    .overlay(alignment: .top) {
+      if let newUser {
+        NewUserBannerView(user: newUser) {
+          if let url = userTalkPageURL(for: newUser) {
+            openURL(url)
+          }
+        }
+      }
+    }
+    .animation(
+      .spring(response: 0.3, dampingFraction: 0.7),
+      value: newUser?.username
+    )
     .animation(
       .spring(response: 0.3, dampingFraction: 0.7),
       value: tappedBubble?.id
@@ -73,7 +88,8 @@ struct ContentView: View {
           let type: EditSoundType = edit.changeSize > 0 ? .addition : .subtraction
           notePlayer.play(note: note, type: type)
         }
-      case .newUser:
+      case .newUser(let user):
+        showBanner(for: user)
         if !settings.isMuted, let note = settings.currentScale.randomElement() {
           notePlayer.play(note: note, type: .newUser)
         }
@@ -91,6 +107,16 @@ struct ContentView: View {
     }
   }
 
+  private func showBanner(for user: WikipediaNewUser) {
+    newUser = user
+    newUserClearTask?.cancel()
+    newUserClearTask = Task {
+      try? await Task.sleep(for: .seconds(8))
+      guard !Task.isCancelled else { return }
+      newUser = nil
+    }
+  }
+
   /// Connects to languages that are selected but not yet connected,
   /// and disconnects languages that are connected but no longer selected.
   private func syncConnections(to selected: Set<String>) {
@@ -100,6 +126,17 @@ struct ContentView: View {
     for lang in selected where !service.connectedLanguages.contains(lang) {
       service.connect(language: lang)
     }
+  }
+
+  /// Builds the URL for welcoming a new user on their talk page
+  private func userTalkPageURL(for user: WikipediaNewUser) -> URL? {
+    guard
+      let encodedName = user.username
+        .addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)
+    else { return nil }
+    return URL(
+      string: "https://\(user.language).wikipedia.org/w/index.php?title=User_talk:\(encodedName)&action=edit&section=new"
+    )
   }
 }
 
