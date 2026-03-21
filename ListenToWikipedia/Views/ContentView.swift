@@ -21,26 +21,13 @@ struct ContentView: View {
         .ignoresSafeArea()
     )
     .overlay(alignment: .topTrailing) {
-      VStack(spacing: 8) {
+      HStack(spacing: 8) {
         Button(action: { isShowingSettings = true }) {
           Image(systemName: "gearshape.fill")
             .font(.title2)
             .foregroundColor(.white)
             .padding()
             .background(Circle().fill(Color.black.opacity(0.5)))
-        }
-        .buttonStyle(.plain)
-
-        Button(action: { settings.isMuted.toggle() }) {
-          Image(
-            systemName: settings.isMuted
-              ? "speaker.slash.fill" : "speaker.wave.2.fill"
-          )
-          .font(.title2)
-          .foregroundColor(settings.isMuted ? .secondary : .white)
-          .frame(width: 28, height: 28)
-          .padding()
-          .background(Circle().fill(Color.black.opacity(0.5)))
         }
         .buttonStyle(.plain)
       }
