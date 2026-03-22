@@ -1,6 +1,8 @@
 import Foundation
 
 /// Parses the preset headers from a SoundFont 2 (.sf2) file.
+/// https://en.wikipedia.org/wiki/SoundFont
+/// https://www.synthfont.com/SFSPEC21.PDF///
 enum SoundFontParser {
   // SoundFont 2.01 SFPresetHeader is exactly 38 bytes (packed):
   //   char     presetName[20]
@@ -18,8 +20,22 @@ enum SoundFontParser {
     withExtension: "sf2"
   )
 
+  /// All instruments from the bundled SF2 file.
+  static let bundledInstruments: [SoundFontInstrument] = {
+    guard let url = bundledSoundFontURL else { return [] }
+    return instruments(at: url)
+  }()
+
+  /// All instruments grouped by bank, sorted by bank then name.
+  static let bundledInstrumentsByBank: [(bank: UInt16, instruments: [SoundFontInstrument])] = {
+    let grouped = Dictionary(grouping: bundledInstruments, by: \.bank)
+    return grouped.keys.sorted().map { bank in
+      (bank: bank, instruments: grouped[bank]!)
+    }
+  }()
+
   /// Returns all instruments found in the given SF2 file, sorted by name.
-  static func instruments(at url: URL) -> [SoundFontInstrument] {
+  private static func instruments(at url: URL) -> [SoundFontInstrument] {
     guard let data = try? Data(contentsOf: url, options: .mappedIfSafe) else {
       return []
     }
