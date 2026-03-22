@@ -72,6 +72,7 @@ struct ContentView: View {
             openURL(url)
           }
         }
+        .padding([.top], 2)
       }
     }
     .animation(
