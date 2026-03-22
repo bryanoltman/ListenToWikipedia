@@ -31,7 +31,11 @@ struct ContentView: View {
           Image(systemName: "gearshape.fill")
             .font(.title2)
             .foregroundColor(.white)
-            .padding(4)
+            #if os(iOS)
+              .padding(4)
+            #else
+              .padding(8)
+            #endif
         }
         .buttonBorderShape(.circle)
         .buttonStyle(.glass)
