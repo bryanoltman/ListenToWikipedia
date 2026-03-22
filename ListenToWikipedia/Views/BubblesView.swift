@@ -204,6 +204,8 @@ struct BubblesView: View {
   @ObservedObject var manager: BubbleManager
   var onTap: (Bubble) -> Void
 
+  @State private var gestureActive = false
+
   var body: some View {
     GeometryReader { geometry in
       TimelineView(.animation) { timeline in
@@ -323,12 +325,15 @@ struct BubblesView: View {
         .gesture(
           DragGesture(minimumDistance: 0)
             .onChanged { value in
+              guard !gestureActive else { return }
+              gestureActive = true
               let now = Date.timeIntervalSinceReferenceDate
               if let bubble = manager.bubble(at: value.startLocation, time: now, in: geometry.size) {
                 manager.recordTap(on: bubble)
               }
             }
             .onEnded { value in
+              gestureActive = false
               let now = Date.timeIntervalSinceReferenceDate
               if let bubble = manager.bubble(at: value.startLocation, time: now, in: geometry.size) {
                 onTap(bubble)
