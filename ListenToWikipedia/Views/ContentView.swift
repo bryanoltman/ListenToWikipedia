@@ -39,7 +39,7 @@ struct ContentView: View {
         }
         .buttonBorderShape(.circle)
         .buttonStyle(.glass)
-        .padding()
+        .padding([.leading])
       } else {
         Button(action: openSettingsAction) {
           Image(systemName: "gearshape.fill")
@@ -50,7 +50,7 @@ struct ContentView: View {
         }
         .buttonBorderShape(.circle)
         .buttonStyle(.plain)
-        .padding()
+        .padding([.leading])
       }
     }
     .overlay(alignment: .bottom) {
