@@ -76,6 +76,39 @@ enum BubblePhysics {
     let scaled = 20.0 + 50.0 * log10(1.0 + magnitude)
     return min(scaled, maxSize)
   }
+
+  // MARK: Tap response
+
+  static let tapAnimationDuration: TimeInterval = 0.25
+  static let tapRippleDuration: TimeInterval = 0.4
+
+  /// Scale pop: quick swell and settle using a sine curve.
+  static func tapScale(tapAge: TimeInterval) -> Double {
+    guard tapAge >= 0, tapAge < tapAnimationDuration else { return 1.0 }
+    let t = tapAge / tapAnimationDuration
+    return 1.0 + 0.1 * sin(t * .pi)
+  }
+
+  /// White flash overlay opacity that fades out quickly.
+  static func tapFlashOpacity(tapAge: TimeInterval) -> Double {
+    guard tapAge >= 0, tapAge < tapAnimationDuration else { return 0 }
+    let t = tapAge / tapAnimationDuration
+    return 0.05 * (1.0 - t * t)
+  }
+
+  /// Expanding ring emitted from a tapped bubble, or nil if inactive.
+  static func tapRippleState(
+    tapAge: TimeInterval,
+    baseRadius: Double
+  ) -> (radius: Double, opacity: Double, lineWidth: Double)? {
+    guard tapAge >= 0, tapAge < tapRippleDuration else { return nil }
+    let t = tapAge / tapRippleDuration
+    let easedT = 1.0 - (1.0 - t) * (1.0 - t)
+    let radius = baseRadius + easedT * baseRadius * 0.5
+    let opacity = 0.35 * (1.0 - t)
+    let lineWidth = 2.0 - 1.5 * t
+    return (radius, opacity, lineWidth)
+  }
 }
 
 // MARK: -
@@ -84,6 +117,8 @@ enum BubblePhysics {
 class BubbleManager: ObservableObject {
   @Published private(set) var bubbles: [Bubble] = []
   var viewWidth: Double = 400
+  private(set) var tappedBubbleID: UUID?
+  private(set) var tapTime: TimeInterval = 0
 
   @MainActor
   func addBubble(from edit: WikipediaArticleEdit) {
@@ -125,6 +160,13 @@ class BubbleManager: ObservableObject {
       }
     }
     return nil
+  }
+
+  /// Records a tap on a bubble for visual feedback in the Canvas render loop.
+  @MainActor
+  func recordTap(on bubble: Bubble) {
+    tappedBubbleID = bubble.id
+    tapTime = Date.timeIntervalSinceReferenceDate
   }
 
   private static func articleURL(language: String, pageTitle: String) -> URL? {
@@ -213,12 +255,23 @@ struct BubblesView: View {
               )
             }
 
+            // --- Tap response ---
+            var tapScaleMultiplier = 1.0
+            var tapFlash = 0.0
+            var tapAge: TimeInterval?
+            if bubble.id == manager.tappedBubbleID {
+              let elapsed = currentTime - manager.tapTime
+              tapAge = elapsed
+              tapScaleMultiplier = BubblePhysics.tapScale(tapAge: elapsed)
+              tapFlash = BubblePhysics.tapFlashOpacity(tapAge: elapsed)
+            }
+
             // --- Filled circle with subtle shadow for depth between overlapping bubbles ---
             var bubbleContext = context
             bubbleContext.opacity = opacity
             bubbleContext.addFilter(.shadow(color: .black.opacity(0.3), radius: 4, x: 0, y: 0))
 
-            let drawSize = bubble.size * scale
+            let drawSize = bubble.size * scale * tapScaleMultiplier
             let rect = CGRect(
               x: position.x - (drawSize / 2),
               y: position.y - (drawSize / 2),
@@ -226,6 +279,34 @@ struct BubblesView: View {
               height: drawSize
             )
             bubbleContext.fill(Path(ellipseIn: rect), with: .color(bubble.color))
+
+            // --- Tap flash overlay ---
+            if tapFlash > 0 {
+              var flashContext = context
+              flashContext.opacity = tapFlash * opacity
+              flashContext.fill(Path(ellipseIn: rect), with: .color(.white))
+            }
+
+            // --- Tap ripple ---
+            if let tapAge,
+              let ring = BubblePhysics.tapRippleState(
+                tapAge: tapAge, baseRadius: baseRadius
+              )
+            {
+              var tapRingContext = context
+              tapRingContext.opacity = ring.opacity * opacity
+              let ringRect = CGRect(
+                x: position.x - ring.radius,
+                y: position.y - ring.radius,
+                width: ring.radius * 2,
+                height: ring.radius * 2
+              )
+              tapRingContext.stroke(
+                Path(ellipseIn: ringRect),
+                with: .color(.white),
+                lineWidth: ring.lineWidth
+              )
+            }
 
             // --- Title label with shadow glow for contrast on any background ---
             var textContext = bubbleContext
@@ -239,12 +320,21 @@ struct BubblesView: View {
             textContext.draw(resolvedLabel, at: position, anchor: .center)
           }
         }
-        .onTapGesture { location in
-          let currentTime = Date.timeIntervalSinceReferenceDate
-          if let bubble = manager.bubble(at: location, time: currentTime, in: geometry.size) {
-            onTap(bubble)
-          }
-        }
+        .gesture(
+          DragGesture(minimumDistance: 0)
+            .onChanged { value in
+              let now = Date.timeIntervalSinceReferenceDate
+              if let bubble = manager.bubble(at: value.startLocation, time: now, in: geometry.size) {
+                manager.recordTap(on: bubble)
+              }
+            }
+            .onEnded { value in
+              let now = Date.timeIntervalSinceReferenceDate
+              if let bubble = manager.bubble(at: value.startLocation, time: now, in: geometry.size) {
+                onTap(bubble)
+              }
+            }
+        )
         .onAppear { manager.viewWidth = geometry.size.width }
         .onChange(of: geometry.size.width) { _, width in manager.viewWidth = width }
       }
