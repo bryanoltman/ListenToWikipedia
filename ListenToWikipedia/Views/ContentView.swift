@@ -40,7 +40,7 @@ struct ContentView: View {
     }
     .overlay(alignment: .bottom) {
       if let bubble = tappedBubble {
-        ArticleToastView(bubble: bubble) {
+        ArticleToastView(title: bubble.title, articleURL: bubble.articleURL) {
           if let url = bubble.articleURL {
             openURL(url)
           }
@@ -146,7 +146,8 @@ struct ContentView: View {
         .addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)
     else { return nil }
     return URL(
-      string: "https://\(user.language).wikipedia.org/w/index.php?title=User_talk:\(encodedName)&action=edit&section=new"
+      string:
+        "https://\(user.language).wikipedia.org/w/index.php?title=User_talk:\(encodedName)&action=edit&section=new"
     )
   }
 }

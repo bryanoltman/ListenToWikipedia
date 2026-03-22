@@ -2,17 +2,19 @@ import SwiftUI
 
 /// Toast shown at the bottom of the screen when the user taps a bubble.
 struct ArticleToastView: View {
-  let bubble: Bubble
+  //  let bubble: Bubble
+  let title: String
+  let articleURL: URL?
   var onTap: () -> Void
 
   var body: some View {
     Button(action: onTap) {
       HStack(spacing: 6) {
-        Text(bubble.title)
+        Text(title)
           .font(.subheadline.bold())
           .foregroundColor(.white)
           .multilineTextAlignment(.center)
-        if bubble.articleURL != nil {
+        if articleURL != nil {
           Image(systemName: "arrow.up.right")
             .font(.caption.bold())
             .foregroundColor(.white.opacity(0.7))
@@ -27,7 +29,16 @@ struct ArticleToastView: View {
       )
     }
     .buttonStyle(.plain)
-    .padding(.bottom, 40)
     .transition(.move(edge: .bottom).combined(with: .opacity))
+  }
+}
+
+#Preview {
+  ZStack {
+    Spacer()
+  }
+  .overlay(alignment: .bottom) {
+    ArticleToastView(title: "Patrick Swayze", articleURL: URL(string: "https://en.wikipedia.org/wiki/Patrick_Swayze")) {
+    }
   }
 }

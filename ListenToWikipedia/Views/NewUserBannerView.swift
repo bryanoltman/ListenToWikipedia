@@ -27,7 +27,15 @@ struct NewUserBannerView: View {
       )
     }
     .buttonStyle(.plain)
-    .padding(.top, 40)
     .transition(.move(edge: .top).combined(with: .opacity))
+  }
+}
+
+#Preview {
+  ZStack {
+    Spacer()
+  }
+  .overlay(alignment: .top) {
+    NewUserBannerView(user: WikipediaNewUser(language: "en", username: "test"), onTap: {})
   }
 }
