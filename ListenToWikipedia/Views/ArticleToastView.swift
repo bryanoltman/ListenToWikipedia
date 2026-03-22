@@ -2,7 +2,6 @@ import SwiftUI
 
 /// Toast shown at the bottom of the screen when the user taps a bubble.
 struct ArticleToastView: View {
-  //  let bubble: Bubble
   let title: String
   let articleURL: URL?
   var onTap: () -> Void
@@ -20,16 +19,35 @@ struct ArticleToastView: View {
             .foregroundColor(.white.opacity(0.7))
         }
       }
-      .padding(.horizontal, 16)
-      .padding(.vertical, 12)
-      .background(
+      .padding()
+      .toastBackground()
+    }
+    .buttonStyle()
+    .transition(.move(edge: .bottom).combined(with: .opacity))
+  }
+}
+
+extension View {
+  @ViewBuilder
+  fileprivate func buttonStyle() -> some View {
+    if #available(iOS 26, macOS 26, *) {
+      self.buttonStyle(.glass)
+    } else {
+      self.buttonStyle(.plain)
+    }
+  }
+
+  @ViewBuilder
+  fileprivate func toastBackground() -> some View {
+    if #available(iOS 26, macOS 26, *) {
+      self
+    } else {
+      self.background {
         RoundedRectangle(cornerRadius: 12)
           .fill(Color.toastBackground)
           .shadow(color: .black.opacity(0.5), radius: 5, y: 3)
-      )
+      }
     }
-    .buttonStyle(.plain)
-    .transition(.move(edge: .bottom).combined(with: .opacity))
   }
 }
 

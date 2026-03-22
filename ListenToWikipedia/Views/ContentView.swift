@@ -26,7 +26,17 @@ struct ContentView: View {
         .ignoresSafeArea()
     )
     .overlay(alignment: .topLeading) {
-      HStack(spacing: 8) {
+      if #available(iOS 26.0, macOS 26.0, *) {
+        Button(action: openSettingsAction) {
+          Image(systemName: "gearshape.fill")
+            .font(.title2)
+            .foregroundColor(.white)
+            .padding(4)
+        }
+        .buttonBorderShape(.circle)
+        .buttonStyle(.glass)
+        .padding()
+      } else {
         Button(action: openSettingsAction) {
           Image(systemName: "gearshape.fill")
             .font(.title2)
@@ -34,9 +44,10 @@ struct ContentView: View {
             .padding()
             .background(Circle().fill(Color.black.opacity(0.5)))
         }
+        .buttonBorderShape(.circle)
         .buttonStyle(.plain)
+        .padding()
       }
-      .padding()
     }
     .overlay(alignment: .bottom) {
       if let bubble = tappedBubble {
@@ -45,6 +56,9 @@ struct ContentView: View {
             openURL(url)
           }
         }
+        #if os(macOS)
+          .padding([.bottom])
+        #endif
       }
     }
     .overlay(alignment: .top) {
@@ -128,8 +142,7 @@ struct ContentView: View {
     }
   }
 
-  /// Connects to languages that are selected but not yet connected,
-  /// and disconnects languages that are connected but no longer selected.
+  /// Connects to languages that are selected but not yet connected and disconnects languages that are connected but no longer selected.
   private func syncConnections(to selected: Set<String>) {
     for lang in service.connectedLanguages where !selected.contains(lang) {
       service.disconnect(language: lang)
