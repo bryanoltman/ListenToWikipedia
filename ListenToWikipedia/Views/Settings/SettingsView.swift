@@ -48,7 +48,7 @@ struct SettingsView: View {
         .frame(width: 350, height: 400)
         .tabItem { Label("Languages", systemImage: "globe") }
 
-        AduioSettingsView()
+        AudioSettingsView()
           .frame(width: 350, height: 400)
           .tabItem { Label("Audio", systemImage: "music.note") }
 
