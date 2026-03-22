@@ -206,6 +206,14 @@ struct BubblesView: View {
 
   @State private var gestureActive = false
 
+  private var fontSize: CGFloat {
+    #if os(tvOS)
+      18.0
+    #else
+      9.0
+    #endif
+  }
+
   var body: some View {
     GeometryReader { geometry in
       TimelineView(.animation) { timeline in
@@ -315,31 +323,33 @@ struct BubblesView: View {
             textContext.addFilter(
               .shadow(color: bubble.labelShadowColor, radius: 3, x: 0, y: 0)
             )
-            let font = Font.system(size: 9, weight: .medium)
+            let font = Font.system(size: fontSize, weight: .medium)
             let resolvedLabel = textContext.resolve(
               Text(bubble.title).font(font).foregroundColor(bubble.labelColor)
             )
             textContext.draw(resolvedLabel, at: position, anchor: .center)
           }
         }
-        .gesture(
-          DragGesture(minimumDistance: 0)
-            .onChanged { value in
-              guard !gestureActive else { return }
-              gestureActive = true
-              let now = Date.timeIntervalSinceReferenceDate
-              if let bubble = manager.bubble(at: value.startLocation, time: now, in: geometry.size) {
-                manager.recordTap(on: bubble)
+        #if !os(tvOS)
+          .gesture(
+            DragGesture(minimumDistance: 0)
+              .onChanged { value in
+                guard !gestureActive else { return }
+                gestureActive = true
+                let now = Date.timeIntervalSinceReferenceDate
+                if let bubble = manager.bubble(at: value.startLocation, time: now, in: geometry.size) {
+                  manager.recordTap(on: bubble)
+                }
               }
-            }
-            .onEnded { value in
-              gestureActive = false
-              let now = Date.timeIntervalSinceReferenceDate
-              if let bubble = manager.bubble(at: value.startLocation, time: now, in: geometry.size) {
-                onTap(bubble)
+              .onEnded { value in
+                gestureActive = false
+                let now = Date.timeIntervalSinceReferenceDate
+                if let bubble = manager.bubble(at: value.startLocation, time: now, in: geometry.size) {
+                  onTap(bubble)
+                }
               }
-            }
-        )
+          )
+        #endif
         .onAppear { manager.viewWidth = geometry.size.width }
         .onChange(of: geometry.size.width) { _, width in manager.viewWidth = width }
       }
