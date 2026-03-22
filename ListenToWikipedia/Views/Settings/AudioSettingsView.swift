@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct MusicSettingsView: View {
+struct AudioSettingsView: View {
   @EnvironmentObject private var settings: AppSettings
 
   private var instruments: [SoundFontInstrument] { SoundFontParser.bundledInstruments }
@@ -84,7 +84,7 @@ struct MusicSettingsView: View {
           )
         }
       }
-      .navigationTitle("Music")
+      .navigationTitle("Audio")
       .navigationBarTitleDisplayMode(.inline)
     }
   #endif
@@ -221,7 +221,7 @@ private struct InstrumentPickerView: View {
 
 #Preview {
   NavigationStack {
-    MusicSettingsView()
+    AudioSettingsView()
       .environmentObject(AppSettings.shared)
   }
 }

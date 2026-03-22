@@ -48,9 +48,9 @@ struct SettingsView: View {
         .frame(width: 350, height: 400)
         .tabItem { Label("Languages", systemImage: "globe") }
 
-        MusicSettingsView()
+        AduioSettingsView()
           .frame(width: 350, height: 400)
-          .tabItem { Label("Music", systemImage: "music.note") }
+          .tabItem { Label("Audio", systemImage: "music.note") }
 
         AboutView()
           .tabItem { Label("About", systemImage: "info.circle") }
@@ -63,7 +63,7 @@ struct SettingsView: View {
       NavigationStack {
         Form {
           NavigationLink("Languages") { LanguagesToggleView() }
-          NavigationLink("Music") { MusicSettingsView() }
+          NavigationLink("Audio") { AudioSettingsView() }
           NavigationLink("About") { AboutView() }
           Toggle("Mute", isOn: $settings.isMuted)
 
