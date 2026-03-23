@@ -1,3 +1,5 @@
+import os
+
 import AVFoundation
 
 /// Plays MIDI notes using the app's bundled SoundFont file.
@@ -28,7 +30,7 @@ class NotePlayer {
         )
         try AVAudioSession.sharedInstance().setActive(true)
       } catch {
-        print("[NotePlayer] Audio session setup failed: \(error)")
+        Log.audio.error("Audio session setup failed: \(error)")
       }
     #endif
   }
@@ -44,7 +46,7 @@ class NotePlayer {
     do {
       try engine.start()
     } catch {
-      print("[NotePlayer] Engine start failed: \(error)")
+      Log.audio.fault("Engine start failed: \(error)")
       return
     }
 
@@ -57,7 +59,7 @@ class NotePlayer {
   /// identified by `instrumentId`.
   func loadInstrument(_ instrumentId: InstrumentId, for type: EditSoundType) {
     guard let url = soundFontURL else {
-      print("[NotePlayer] Bundled SoundFont not found in bundle")
+      Log.audio.fault("Bundled SoundFont not found in bundle")
       return
     }
     guard let sampler = samplers[type] else { return }
@@ -69,8 +71,8 @@ class NotePlayer {
         bankLSB: instrumentId.bankLSB
       )
     } catch {
-      print(
-        "[NotePlayer] SoundFont load failed for \(type) \(instrumentId): \(error)"
+      Log.audio.error(
+        "SoundFont load failed for \(type.rawValue, privacy: .public) \(String(describing: instrumentId), privacy: .public): \(error)"
       )
     }
   }

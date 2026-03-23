@@ -1,3 +1,5 @@
+import os
+
 import Combine
 import Foundation
 
@@ -42,7 +44,7 @@ final class WikipediaWebSocketService: ObservableObject {
   func connect(language: String) {
     guard socketTasks[language] == nil else { return }
     guard let url = URL(string: "wss://wikimon.hatnote.com/v2/\(language)") else {
-      assertionFailure("Could not form WebSocket URL for language '\(language)'")
+      Log.network.fault("Could not form WebSocket URL for language '\(language, privacy: .public)'")
       return
     }
 
@@ -50,11 +52,13 @@ final class WikipediaWebSocketService: ObservableObject {
     socketTasks[language] = task
     connectedLanguages.insert(language)
     task.resume()
+    Log.network.info("Connecting to \(language, privacy: .public)")
     scheduleNextReceive(language: language, task: task)
   }
 
   /// Closes the WebSocket connection for the given language code.
   func disconnect(language: String) {
+    Log.network.info("Disconnecting from \(language, privacy: .public)")
     socketTasks[language]?.cancel(with: .goingAway, reason: nil)
     socketTasks.removeValue(forKey: language)
     connectedLanguages.remove(language)
@@ -62,6 +66,7 @@ final class WikipediaWebSocketService: ObservableObject {
 
   /// Closes all open WebSocket connections.
   func disconnectAll() {
+    Log.network.info("Disconnecting all (\(self.connectedLanguages.count) connections)")
     for language in Array(socketTasks.keys) {
       disconnect(language: language)
     }
@@ -78,6 +83,7 @@ final class WikipediaWebSocketService: ObservableObject {
         switch result {
         case .success(let message):
           if let event = self.parse(message, language: language) {
+            Log.network.debug("Received event for \(language, privacy: .public)")
             self.lastEvent = event
             self.eventSubject.send(event)
           }
@@ -86,9 +92,7 @@ final class WikipediaWebSocketService: ObservableObject {
 
         case .failure(let error):
           // Connection dropped – clean up and let callers observe the change.
-          #if DEBUG
-            print("[WikipediaWebSocketService] \(language) error: \(error)")
-          #endif
+          Log.network.error("Connection error for \(language, privacy: .public): \(error)")
           self.socketTasks.removeValue(forKey: language)
           self.connectedLanguages.remove(language)
         }
@@ -129,7 +133,10 @@ final class WikipediaWebSocketService: ObservableObject {
     guard
       let namespace = json["ns"] as? String,
       namespace.caseInsensitiveCompare("main") == .orderedSame
-    else { return nil }
+    else {
+      Log.network.debug("Skipped non-main-namespace event for \(language, privacy: .public)")
+      return nil
+    }
 
     let changeSize = json["change_size"] as? Int ?? 0
     let isAnon = json["is_anon"] as? Bool ?? false
