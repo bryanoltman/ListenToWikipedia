@@ -44,7 +44,7 @@ final class WikipediaWebSocketService: ObservableObject {
   func connect(language: String) {
     guard socketTasks[language] == nil else { return }
     guard let url = URL(string: "wss://wikimon.hatnote.com/v2/\(language)") else {
-      Log.network.fault("Could not form WebSocket URL for language '\(language, privacy: .public)'")
+      Log.network.fault("Could not form WebSocket URL for language '\(language)'")
       return
     }
 
@@ -52,13 +52,13 @@ final class WikipediaWebSocketService: ObservableObject {
     socketTasks[language] = task
     connectedLanguages.insert(language)
     task.resume()
-    Log.network.info("Connecting to \(language, privacy: .public)")
+    Log.network.info("Connecting to \(language)")
     scheduleNextReceive(language: language, task: task)
   }
 
   /// Closes the WebSocket connection for the given language code.
   func disconnect(language: String) {
-    Log.network.info("Disconnecting from \(language, privacy: .public)")
+    Log.network.info("Disconnecting from \(language)")
     socketTasks[language]?.cancel(with: .goingAway, reason: nil)
     socketTasks.removeValue(forKey: language)
     connectedLanguages.remove(language)
@@ -83,7 +83,7 @@ final class WikipediaWebSocketService: ObservableObject {
         switch result {
         case .success(let message):
           if let event = self.parse(message, language: language) {
-            Log.network.debug("Received event for \(language, privacy: .public)")
+            Log.network.debug("Received event for \(language)")
             self.lastEvent = event
             self.eventSubject.send(event)
           }
@@ -92,7 +92,7 @@ final class WikipediaWebSocketService: ObservableObject {
 
         case .failure(let error):
           // Connection dropped – clean up and let callers observe the change.
-          Log.network.error("Connection error for \(language, privacy: .public): \(error)")
+          Log.network.error("Connection error for \(language): \(error)")
           self.socketTasks.removeValue(forKey: language)
           self.connectedLanguages.remove(language)
         }
@@ -134,7 +134,7 @@ final class WikipediaWebSocketService: ObservableObject {
       let namespace = json["ns"] as? String,
       namespace.caseInsensitiveCompare("main") == .orderedSame
     else {
-      Log.network.debug("Skipped non-main-namespace event for \(language, privacy: .public)")
+      Log.network.debug("Skipped non-main-namespace event for \(language)")
       return nil
     }
 

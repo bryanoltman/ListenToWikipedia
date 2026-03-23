@@ -72,7 +72,7 @@ class NotePlayer {
       )
     } catch {
       Log.audio.error(
-        "SoundFont load failed for \(type.rawValue, privacy: .public) \(String(describing: instrumentId), privacy: .public): \(error)"
+        "SoundFont load failed for \(type.rawValue) \(String(describing: instrumentId)): \(error)"
       )
     }
   }
