@@ -10,6 +10,7 @@ struct ContentView: View {
   #if os(macOS)
     @Environment(\.openSettings) private var openSettings
   #endif
+  @Environment(\.scenePhase) private var scenePhase
   @State private var tappedBubble: Bubble?
   @State private var tapClearTask: Task<Void, Never>?
   @State private var newUser: WikipediaNewUser?
@@ -90,11 +91,12 @@ struct ContentView: View {
         SettingsView()
       }
     #endif
-    .onAppear {
-      syncConnections(to: settings.selectedLanguageCodes)
-    }
-    .onDisappear {
-      service.disconnectAll()
+    .onChange(of: scenePhase) { _, phase in
+      if phase == .active {
+        syncConnections(to: settings.selectedLanguageCodes)
+      } else {
+        service.disconnectAll()
+      }
     }
     .onReceive(settings.$selectedLanguageCodes) { codes in
       syncConnections(to: codes)
@@ -151,7 +153,8 @@ struct ContentView: View {
     }
   }
 
-  /// Connects to languages that are selected but not yet connected and disconnects languages that are connected but no longer selected.
+  /// Connects to languages that are selected but not yet connected and
+  /// disconnects languages that are connected but no longer selected.
   private func syncConnections(to selected: Set<String>) {
     for lang in service.connectedLanguages where !selected.contains(lang) {
       service.disconnect(language: lang)
