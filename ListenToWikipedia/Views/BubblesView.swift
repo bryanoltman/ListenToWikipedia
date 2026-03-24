@@ -68,13 +68,20 @@ enum BubblePhysics {
     return (radius, opacity, lineWidth)
   }
 
-  /// Maps a Wikipedia edit's byte-change magnitude to a bubble diameter,
-  /// clamped to `maxSize`. Uses a log scale so both tiny and enormous edits
-  /// remain visible.
+  /// Maps a Wikipedia edit's byte-change magnitude to a bubble diameter.
+  /// Based on Hatnote listen.hatnote.com sizing: radius = max(sqrt(abs(change_size)) * scaleFactor, minRadius).
+  /// The scale factor is proportional to the view so bubbles look similar
+  /// across phone, tablet, TV, and web.
   static func size(forChangeSize changeSize: Int, maxSize: Double) -> Double {
+    // Hatnote uses scaleFactor=5 on a ~1200px-wide canvas (reference maxSize = 800).
+    let referenceMaxSize = 800.0
+    let scale = maxSize / referenceMaxSize
+    let scaleFactor = 5.0 * scale
+    let minRadius = max(15.0 * scale, 15.0)
     let magnitude = Double(abs(changeSize))
-    let scaled = 20.0 + 50.0 * log10(1.0 + magnitude)
-    return min(scaled, maxSize)
+    let radius = max(sqrt(magnitude) * scaleFactor, minRadius)
+    // Return diameter (the rest of the code uses size as diameter)
+    return min(radius * 2.0, maxSize)
   }
 
   // MARK: Tap response
@@ -116,7 +123,7 @@ enum BubblePhysics {
 /// Provides data and hit testing for the bubbles canvas.
 class BubbleManager: ObservableObject {
   @Published private(set) var bubbles: [Bubble] = []
-  var viewWidth: Double = 400
+  var viewSize: CGSize = CGSize(width: 400, height: 400)
   private(set) var tappedBubbleID: UUID?
   private(set) var tapTime: TimeInterval = 0
 
@@ -131,7 +138,7 @@ class BubbleManager: ObservableObject {
       color: fill,
       labelColor: label,
       labelShadowColor: shadow,
-      size: BubblePhysics.size(forChangeSize: edit.changeSize, maxSize: viewWidth / 2),
+      size: BubblePhysics.size(forChangeSize: edit.changeSize, maxSize: max(viewSize.width, viewSize.height) * 2.0 / 3.0),
       title: edit.pageTitle,
       articleURL: Self.articleURL(
         language: edit.language,
@@ -350,8 +357,8 @@ struct BubblesView: View {
               }
           )
         #endif
-        .onAppear { manager.viewWidth = geometry.size.width }
-        .onChange(of: geometry.size.width) { _, width in manager.viewWidth = width }
+        .onAppear { manager.viewSize = geometry.size }
+        .onChange(of: geometry.size) { _, size in manager.viewSize = size }
       }
     }
     .ignoresSafeArea()
