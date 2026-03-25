@@ -16,6 +16,9 @@ struct ListenToWikipediaApp: App {
         UIApplication.shared.isIdleTimerDisabled = (phase == .active)
       }
     #endif
+    // macOS lifecycle: WebSocket connections persist while the app is running.
+    // scenePhase is unreliable for background detection on macOS, but for an
+    // ambient visualization app, persistent connections are intentional.
     #if os(macOS)
       .windowStyle(.hiddenTitleBar)
     #endif
