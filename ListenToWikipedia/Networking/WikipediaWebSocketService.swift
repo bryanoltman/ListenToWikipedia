@@ -39,10 +39,23 @@ final class WikipediaWebSocketService: ObservableObject {
   private var socketTasks: [String: URLSessionWebSocketTask] = [:]
   private let eventSubject = PassthroughSubject<WikipediaEvent, Never>()
 
+  private var reconnectTasks: [String: Task<Void, Never>] = [:]
+  private var reconnectDelays: [String: TimeInterval] = [:]
+
+  private static let initialDelay: TimeInterval = 1.0
+  private static let maxDelay: TimeInterval = 30.0
+
   /// Opens a WebSocket connection for the given Wikipedia language code.
   /// If a connection for that language already exists, this is a no-op.
   func connect(language: String) {
     guard socketTasks[language] == nil else { return }
+    // Cancel any pending reconnect for this language.
+    reconnectTasks[language]?.cancel()
+    reconnectTasks.removeValue(forKey: language)
+    performConnect(language: language)
+  }
+
+  private func performConnect(language: String) {
     guard let url = URL(string: "wss://wikimon.hatnote.com/v2/\(language)") else {
       Log.network.fault("Could not form WebSocket URL for language '\(language)'")
       return
@@ -59,6 +72,9 @@ final class WikipediaWebSocketService: ObservableObject {
   /// Closes the WebSocket connection for the given language code.
   func disconnect(language: String) {
     Log.network.info("Disconnecting from \(language)")
+    reconnectTasks[language]?.cancel()
+    reconnectTasks.removeValue(forKey: language)
+    reconnectDelays.removeValue(forKey: language)
     socketTasks[language]?.cancel(with: .goingAway, reason: nil)
     socketTasks.removeValue(forKey: language)
     connectedLanguages.remove(language)
@@ -67,6 +83,9 @@ final class WikipediaWebSocketService: ObservableObject {
   /// Closes all open WebSocket connections.
   func disconnectAll() {
     Log.network.info("Disconnecting all (\(self.connectedLanguages.count) connections)")
+    for task in reconnectTasks.values { task.cancel() }
+    reconnectTasks.removeAll()
+    reconnectDelays.removeAll()
     for language in Array(socketTasks.keys) {
       disconnect(language: language)
     }
@@ -87,19 +106,42 @@ final class WikipediaWebSocketService: ObservableObject {
             self.lastEvent = event
             self.eventSubject.send(event)
           }
+          // Reset reconnect delay on successful receive.
+          self.reconnectDelays[language] = Self.initialDelay
           // Recursively schedule the next receive.
           self.scheduleNextReceive(language: language, task: task)
 
         case .failure(let error):
-          // Connection dropped – clean up and let callers observe the change.
-          Log.network.error("Connection error for \(language): \(error)")
+          // Connection dropped – clean up socket state.
           self.socketTasks.removeValue(forKey: language)
           self.connectedLanguages.remove(language)
+
+          // Intentional cancellation — do not reconnect.
+          if (error as? URLError)?.code == .cancelled {
+            Log.network.info("Connection cancelled for \(language) (intentional)")
+            return
+          }
+
+          // Unexpected failure — schedule reconnect with exponential backoff.
+          Log.network.error("Connection error for \(language): \(error)")
+          let currentDelay = self.reconnectDelays[language] ?? Self.initialDelay
+          let attempt = Int(log2(currentDelay / Self.initialDelay)) + 1
+          self.reconnectTasks[language]?.cancel()
+          self.reconnectTasks[language] = Task { [weak self] in
+            do {
+              try await Task.sleep(for: .seconds(currentDelay))
+            } catch {
+              return // Task cancelled — disconnect was called
+            }
+            guard let self else { return }
+            Log.network.info("Reconnecting to \(language) (attempt \(attempt), delay \(currentDelay)s)")
+            self.reconnectDelays[language] = min(currentDelay * 2, Self.maxDelay)
+            self.performConnect(language: language)
+          }
         }
       }
     }
   }
-
   // MARK: - JSON parsing
 
   private func parse(_ message: URLSessionWebSocketTask.Message, language: String)
@@ -115,43 +157,6 @@ final class WikipediaWebSocketService: ObservableObject {
     @unknown default:
       return nil
     }
-
-    guard
-      let data = jsonString.data(using: .utf8),
-      let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
-    else { return nil }
-
-    let pageTitle = json["page_title"] as? String ?? ""
-
-    // New-user registration event
-    if pageTitle == "Special:Log/newusers" {
-      guard let username = json["user"] as? String else { return nil }
-      return .newUser(WikipediaNewUser(language: language, username: username))
-    }
-
-    // Article edit – main namespace only
-    guard
-      let namespace = json["ns"] as? String,
-      namespace.caseInsensitiveCompare("main") == .orderedSame
-    else {
-      Log.network.debug("Skipped non-main-namespace event for \(language)")
-      return nil
-    }
-
-    let changeSize = json["change_size"] as? Int ?? 0
-    let isAnon = json["is_anon"] as? Bool ?? false
-    let isBot = json["is_bot"] as? Bool ?? false
-    let url = (json["url"] as? String).flatMap { URL(string: $0) }
-
-    return .articleEdit(
-      WikipediaArticleEdit(
-        language: language,
-        pageTitle: pageTitle,
-        changeSize: changeSize,
-        isAnonymous: isAnon,
-        isBot: isBot,
-        url: url
-      )
-    )
+    return WikipediaEvent.fromJsonString(jsonString, language: language)
   }
 }
