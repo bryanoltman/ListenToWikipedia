@@ -58,6 +58,20 @@ struct ContentView: View {
         }
       }
     #endif
+    #if os(tvOS)
+      .overlay(alignment: .topLeading) {
+        Button(action: openSettingsAction) {
+          Image(systemName: "gearshape.fill")
+            .font(.title2)
+            .foregroundColor(.white)
+            .padding()
+            .background(Circle().fill(Color.black.opacity(0.5)))
+        }
+        .buttonStyle(.plain)
+        .padding([.leading])
+        .accessibilityLabel("Settings")
+      }
+    #endif
     .overlay(alignment: .bottom) {
       if let bubble = tappedBubble {
         ArticleToastView(title: bubble.title, articleURL: bubble.articleURL) {
@@ -107,11 +121,9 @@ struct ContentView: View {
       .spring(response: 0.3, dampingFraction: 0.7),
       value: tappedBubble?.id
     )
-    #if !os(tvOS)
     .sheet(isPresented: $isShowingSettings) {
       SettingsView()
     }
-    #endif
     .onChange(of: scenePhase) { _, phase in
       if phase == .active {
         syncConnections(to: settings.selectedLanguageCodes)
