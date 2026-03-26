@@ -58,7 +58,8 @@ import os
         if type == .ended {
           let options = info[AVAudioSessionInterruptionOptionKey] as? UInt ?? 0
           if AVAudioSession.InterruptionOptions(rawValue: options).contains(.shouldResume) {
-            Task { @MainActor in self?.restartEngine() }
+            let player = self
+            Task { @MainActor in player?.restartEngine() }
           }
         }
       }
@@ -75,7 +76,8 @@ import os
         else { return }
 
         if reason == .oldDeviceUnavailable {
-          Task { @MainActor in self?.restartEngine() }
+          let player = self
+          Task { @MainActor in player?.restartEngine() }
         }
       }
     #endif
