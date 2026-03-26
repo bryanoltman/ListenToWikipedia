@@ -3,6 +3,7 @@ import Foundation
 
 /// Shared, persistent app settings. Inject into the SwiftUI environment via
 /// `.environmentObject(AppSettings.shared)`.
+@MainActor
 class AppSettings: ObservableObject {
   static let shared = AppSettings()
 
@@ -81,12 +82,14 @@ class AppSettings: ObservableObject {
 
     instrumentPrograms = AppSettings.loadInstrumentPrograms(from: defaults)
 
-    rootOctave =
+    let loadedRootOctave =
       defaults.object(forKey: Keys.rootOctave) == nil
       ? Defaults.rootOctave : defaults.integer(forKey: Keys.rootOctave)
-    octaveRange =
+    rootOctave = min(max(loadedRootOctave, 0), 8)
+    let loadedOctaveRange =
       defaults.object(forKey: Keys.octaveRange) == nil
       ? Defaults.octaveRange : defaults.integer(forKey: Keys.octaveRange)
+    octaveRange = min(max(loadedOctaveRange, 1), 4)
 
     // Persist whenever any published property changes.
     objectWillChange
@@ -107,7 +110,7 @@ class AppSettings: ObservableObject {
           let bank = entry["bank"],
           let program = entry["program"]
         {
-          programs[type] = InstrumentId(bank: UInt16(bank), program: UInt8(clamping: program))
+          programs[type] = InstrumentId(bank: UInt16(clamping: bank), program: UInt8(clamping: program))
         } else {
           programs[type] = type.defaultInstrumentId
         }
@@ -130,8 +133,8 @@ class AppSettings: ObservableObject {
       dict[pair.key.rawValue] = ["bank": Int(pair.value.bank), "program": Int(pair.value.program)]
     }
     defaults.set(encoded, forKey: Keys.instrumentPrograms)
-    defaults.set(rootOctave, forKey: Keys.rootOctave)
-    defaults.set(octaveRange, forKey: Keys.octaveRange)
+    defaults.set(min(max(rootOctave, 0), 8), forKey: Keys.rootOctave)
+    defaults.set(min(max(octaveRange, 1), 4), forKey: Keys.octaveRange)
   }
 
   /// Resets all settings to their defaults.
