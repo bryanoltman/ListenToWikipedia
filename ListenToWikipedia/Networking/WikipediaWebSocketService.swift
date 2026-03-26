@@ -1,7 +1,6 @@
-import os
-
 import Combine
 import Foundation
+import os
 
 /// Manages WebSocket connections to the wikimon recent-changes stream
 /// (wss://wikimon.hatnote.com/v2/{languageCode}) and publishes parsed events.
@@ -131,7 +130,7 @@ final class WikipediaWebSocketService: ObservableObject {
             do {
               try await Task.sleep(for: .seconds(currentDelay))
             } catch {
-              return // Task cancelled — disconnect was called
+              return  // Task cancelled — disconnect was called
             }
             guard let self else { return }
             Log.network.info("Reconnecting to \(language) (attempt \(attempt), delay \(currentDelay)s)")
@@ -142,6 +141,7 @@ final class WikipediaWebSocketService: ObservableObject {
       }
     }
   }
+
   // MARK: - JSON parsing
 
   private func parse(_ message: URLSessionWebSocketTask.Message, language: String)
@@ -157,6 +157,7 @@ final class WikipediaWebSocketService: ObservableObject {
     @unknown default:
       return nil
     }
+
     return WikipediaEvent.fromJsonString(jsonString, language: language)
   }
 }
