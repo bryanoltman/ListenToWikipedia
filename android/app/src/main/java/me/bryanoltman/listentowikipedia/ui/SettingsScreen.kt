@@ -482,6 +482,9 @@ fun SettingsScreen(
                         .padding(bottom = 32.dp)
                 )
             }
+
+            // Extra bottom space to ensure "About" section is entirely visible.
+            item { Spacer(modifier = Modifier.height(64.dp)) }
         }
     }
 }
