@@ -9,6 +9,8 @@ import androidx.compose.runtime.produceState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Paint
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.TextStyle
@@ -122,12 +124,20 @@ fun BubblesCanvas(
                 )
             }
 
-            // Draw filled circle
-            drawCircle(
-                color = bubble.fillColor.copy(alpha = opacity),
-                radius = radius,
-                center = Offset(cx, cy)
-            )
+            // Draw filled circle with subtle shadow matching iOS
+            // (.shadow(color: .black.opacity(0.3), radius: 4))
+            drawIntoCanvas { canvas ->
+                val paint = Paint().also { p ->
+                    p.color = bubble.fillColor.copy(alpha = opacity)
+                    p.asFrameworkPaint().setShadowLayer(
+                        4f * density,  // blur radius in px (4dp)
+                        0f,
+                        0f,
+                        android.graphics.Color.argb((0.3f * opacity * 255).toInt(), 0, 0, 0)
+                    )
+                }
+                canvas.drawCircle(Offset(cx, cy), radius, paint)
+            }
 
             // White flash overlay for tap
             if (tapFlashAlpha > 0f) {
