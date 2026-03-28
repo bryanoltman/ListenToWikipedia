@@ -58,7 +58,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.kotlinx.coroutines.android)
-    implementation(libs.mididriver)
+    implementation(files("libs/MidiDriver-1.29.aar"))
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.androidx.core.splashscreen)
     testImplementation(libs.junit)
