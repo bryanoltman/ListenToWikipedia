@@ -31,7 +31,7 @@ fun ArticleToast(
         bubble?.let { b ->
             Surface(
                 shape = RoundedCornerShape(12.dp),
-                color = Color(1f, 1f, 1f, 0.15f),
+                color = Color(0.15f, 0.15f, 0.15f, 1f),
                 shadowElevation = 5.dp,
                 modifier = Modifier
                     .padding(horizontal = 16.dp, vertical = 40.dp)
