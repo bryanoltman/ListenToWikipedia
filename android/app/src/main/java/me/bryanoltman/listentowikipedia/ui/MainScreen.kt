@@ -72,7 +72,9 @@ fun MainScreen(viewModel: MainViewModel) {
         modifier = Modifier
             .fillMaxSize()
             .onSizeChanged { size ->
-                viewModel.canvasWidth = with(density) { size.width.toFloat() }
+                viewModel.canvasWidth = size.width.toFloat()
+                viewModel.canvasHeight = size.height.toFloat()
+                viewModel.minBubbleRadiusPx = with(density) { 15.dp.toPx() }
             }
     ) {
         // Dark background + bubble canvas

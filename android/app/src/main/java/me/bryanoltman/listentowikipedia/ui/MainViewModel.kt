@@ -47,8 +47,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _instruments = MutableStateFlow<List<SoundFontInstrument>>(emptyList())
     val instruments: StateFlow<List<SoundFontInstrument>> = _instruments.asStateFlow()
 
-    /** Width of the canvas, updated by the composable. Used to cap bubble size. */
+    /** Canvas dimensions in px, updated by the composable. */
     var canvasWidth: Float = 400f
+    var canvasHeight: Float = 800f
+
+    /** Minimum bubble radius in px (set from 15.dp by MainScreen). */
+    var minBubbleRadiusPx: Float = 15f
 
     init {
         notePlayer.start(settings.instrumentPrograms.value)
@@ -127,7 +131,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             fillColor = fill,
             labelColor = label,
             labelShadowColor = shadow,
-            size = BubblePhysics.bubbleSize(edit.changeSize, canvasWidth / 2f),
+            size = BubblePhysics.bubbleSize(edit.changeSize, minOf(canvasWidth, canvasHeight), minBubbleRadiusPx),
             title = edit.pageTitle,
             articleUrl = articleUrl(edit.language, edit.pageTitle)
         )

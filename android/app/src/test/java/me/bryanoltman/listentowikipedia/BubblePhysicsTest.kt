@@ -72,41 +72,49 @@ class BubblePhysicsTest {
     // --- bubbleSize ---
 
     @Test
-    fun `bubbleSize returns minimum for tiny edits`() {
-        // Very small edit: sqrt(1) * scaleFactor may be < minRadius
-        val size = BubblePhysics.bubbleSize(1, 400f)
-        assertTrue("Size should be positive: $size", size > 0f)
+    fun `bubbleSize returns minimum diameter for tiny edits`() {
+        val minRadius = 15f
+        val size = BubblePhysics.bubbleSize(1, 400f, minRadius)
+        // Diameter should be at least 2 * minRadius
+        assertTrue("Size should be >= 2*minRadius: $size", size >= minRadius * 2f)
     }
 
     @Test
-    fun `bubbleSize caps at maxSize`() {
-        // Huge edit should not exceed maxSize
-        val size = BubblePhysics.bubbleSize(1000000, 200f)
-        assertTrue("Size should not exceed maxSize: $size <= 200", size <= 200f)
+    fun `bubbleSize caps at maxDiameter`() {
+        val size = BubblePhysics.bubbleSize(1000000, 200f, 15f)
+        assertTrue("Size should not exceed maxDiameter: $size <= 200", size <= 200f)
+    }
+
+    @Test
+    fun `bubbleSize largest edit fills narrow dimension`() {
+        // 100_000 bytes maps to maxRadius, so diameter = maxDiameter
+        val maxDiameter = 400f
+        val size = BubblePhysics.bubbleSize(100000, maxDiameter, 15f)
+        assertEquals(maxDiameter, size, epsilon)
     }
 
     @Test
     fun `bubbleSize scales with edit magnitude`() {
-        val small = BubblePhysics.bubbleSize(10, 400f)
-        val medium = BubblePhysics.bubbleSize(1000, 400f)
-        val large = BubblePhysics.bubbleSize(100000, 400f)
+        val small = BubblePhysics.bubbleSize(10, 400f, 15f)
+        val medium = BubblePhysics.bubbleSize(1000, 400f, 15f)
+        val large = BubblePhysics.bubbleSize(100000, 400f, 15f)
         assertTrue("Larger edits should make bigger bubbles", small <= medium)
         assertTrue("Larger edits should make bigger bubbles", medium <= large)
     }
 
     @Test
     fun `bubbleSize negative changeSize uses absolute value`() {
-        val pos = BubblePhysics.bubbleSize(500, 400f)
-        val neg = BubblePhysics.bubbleSize(-500, 400f)
+        val pos = BubblePhysics.bubbleSize(500, 400f, 15f)
+        val neg = BubblePhysics.bubbleSize(-500, 400f, 15f)
         assertEquals(pos, neg, epsilon)
     }
 
     @Test
-    fun `bubbleSize respects density scale`() {
-        val defaultSize = BubblePhysics.bubbleSize(1, 400f, densityScale = 1f)
-        val hdpiSize = BubblePhysics.bubbleSize(1, 400f, densityScale = 2f)
-        // Higher density → larger minimum radius → potentially larger bubble for tiny edits
-        assertTrue("HDPI minimum should be >= default", hdpiSize >= defaultSize)
+    fun `bubbleSize respects min radius`() {
+        val smallMin = BubblePhysics.bubbleSize(1, 400f, 15f)
+        val largeMin = BubblePhysics.bubbleSize(1, 400f, 30f)
+        // Larger min radius → bigger bubble for tiny edits
+        assertTrue("Larger minRadius should give bigger bubble", largeMin >= smallMin)
     }
 
     // --- rippleProgress ---

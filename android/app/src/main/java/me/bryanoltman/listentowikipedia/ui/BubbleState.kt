@@ -6,6 +6,7 @@ import me.bryanoltman.listentowikipedia.ui.theme.*
 import java.net.URLEncoder
 import java.util.UUID
 import kotlin.math.abs
+import kotlin.math.ln
 import kotlin.math.sqrt
 
 data class Bubble(
@@ -60,15 +61,17 @@ object BubblePhysics {
     }
 
     /// Maps edit magnitude to bubble diameter.
-    /// Matches iOS: radius = max(sqrt(abs(changeSize)) * scaleFactor, minRadius)
-    /// scaleFactor = 5 * (maxSize / 800), minRadius = max(15 * densityScale, 15)
-    /// Returns diameter (2 * radius), capped at maxSize.
-    fun bubbleSize(changeSize: Int, maxSize: Float, densityScale: Float = 1f): Float {
-        val scaleFactor = 5f * (maxSize / 800f)
-        val minRadius = maxOf(15f * densityScale, 15f)
-        val radius = maxOf(sqrt(abs(changeSize).toFloat()) * scaleFactor, minRadius)
-        val diameter = radius * 2f
-        return minOf(diameter, maxSize)
+    ///
+    /// Uses logarithmic scaling so small-to-medium edits still produce
+    /// visually meaningful bubbles. The range [1, 100_000] bytes maps
+    /// linearly (in log space) to [minRadiusPx, maxDiameter / 2].
+    /// Returns diameter, capped at maxDiameter.
+    fun bubbleSize(changeSize: Int, maxDiameter: Float, minRadiusPx: Float): Float {
+        val maxRadius = maxDiameter / 2f
+        val magnitude = abs(changeSize).coerceIn(1, 100_000).toDouble()
+        val normalized = ln(magnitude) / ln(100_000.0) // 0..1
+        val radius = (minRadiusPx + normalized.toFloat() * (maxRadius - minRadiusPx))
+        return minOf(radius * 2f, maxDiameter)
     }
 
     /// Ripple ring progress for ring index (0 or 1) at given bubble age.
