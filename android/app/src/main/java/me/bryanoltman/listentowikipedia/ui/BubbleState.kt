@@ -6,10 +6,7 @@ import me.bryanoltman.listentowikipedia.ui.theme.*
 import java.net.URLEncoder
 import java.util.UUID
 import kotlin.math.abs
-import kotlin.math.cos
-import kotlin.math.exp
-import kotlin.math.log10
-import kotlin.math.min
+import kotlin.math.sqrt
 
 data class Bubble(
     val id: String = UUID.randomUUID().toString(),
@@ -18,58 +15,86 @@ data class Bubble(
     val normalizedY: Float,        // 0.05..0.95
     val fillColor: Color,
     val labelColor: Color,
+    val labelShadowColor: Color,
     val size: Float,               // diameter in px
     val title: String,
     val articleUrl: String?
 )
 
 object BubblePhysics {
-    const val INITIAL_UPWARD_SPEED = 15f
-    const val UPWARD_ACCELERATION = 45f
-    const val LIFESPAN = 4.0  // seconds
+    const val LIFESPAN = 9.0  // seconds
 
-    /** Damped cosine bounce scale over the first 0.4s. */
-    fun scale(age: Double): Float {
-        val bounceDuration = 0.4
-        if (age > bounceDuration) return 1f
-        val t = age / bounceDuration
-        return (1.0 - cos(t * Math.PI * 3.0) * exp(-t * 5.0)).toFloat()
+    // Ripple ring parameters
+    const val RIPPLE_COUNT = 2
+    const val RIPPLE_STAGGER = 0.3    // seconds between rings
+    const val RIPPLE_DURATION = 1.0   // seconds per ring
+    const val RIPPLE_EXPANSION = 0.4f  // fraction of bubble radius
+    const val RIPPLE_START_OPACITY = 0.4f
+    const val RIPPLE_START_LINE_WIDTH = 2f
+    const val RIPPLE_END_LINE_WIDTH = 0.5f
+
+    // Tap feedback parameters
+    const val TAP_SCALE_DURATION = 0.25  // seconds
+    const val TAP_SCALE_AMOUNT = 0.10f   // +10%
+    const val TAP_FLASH_DURATION = 0.25  // seconds
+    const val TAP_FLASH_OPACITY = 0.05f
+    const val TAP_RING_DURATION = 0.4    // seconds
+
+    /// Ease-out cubic entrance: 0→1 over 0.3s
+    fun entranceScale(age: Double): Float {
+        val duration = 0.3
+        if (age >= duration) return 1f
+        val t = (age / duration).toFloat()
+        return 1f - (1f - t) * (1f - t) * (1f - t)  // ease-out cubic
     }
 
-    /** Vertical position: starts at normalizedY, moves upward via kinematics. */
-    fun positionY(startNormalizedY: Float, age: Double, canvasHeight: Float): Float {
-        val startY = startNormalizedY * canvasHeight
-        val dist = (INITIAL_UPWARD_SPEED * age + 0.5 * UPWARD_ACCELERATION * age * age).toFloat()
-        return startY - dist
-    }
+    /// Static position — no drift. Returns normalizedX * canvasWidth (or Y).
+    fun positionX(normalizedX: Float, canvasWidth: Float): Float = normalizedX * canvasWidth
+    fun positionY(normalizedY: Float, canvasHeight: Float): Float = normalizedY * canvasHeight
 
-    /** Maps edit magnitude to bubble diameter, log scale, clamped to maxSize. */
-    fun bubbleSize(changeSize: Int, maxSize: Float): Float {
-        val magnitude = abs(changeSize).toFloat()
-        val scaled = 20f + 50f * log10(1f + magnitude)
-        return min(scaled, maxSize)
-    }
-
-    /** Opacity: full until last 1.5s, then linear fade to 0. */
+    /// Full opacity 0–6s, linear fade 6–9s.
     fun opacity(age: Double): Float {
-        val fadeDuration = 1.5
-        val fadeStart = LIFESPAN - fadeDuration
-        return if (age > fadeStart) {
-            maxOf(0f, (1.0 - (age - fadeStart) / fadeDuration).toFloat())
-        } else {
-            1f
-        }
+        val fadeStart = LIFESPAN - 3.0  // 6.0
+        return if (age <= fadeStart) 1f
+        else maxOf(0f, (1.0 - (age - fadeStart) / 3.0).toFloat())
+    }
+
+    /// Maps edit magnitude to bubble diameter.
+    /// Matches iOS: radius = max(sqrt(abs(changeSize)) * scaleFactor, minRadius)
+    /// scaleFactor = 5 * (maxSize / 800), minRadius = max(15 * densityScale, 15)
+    /// Returns diameter (2 * radius), capped at maxSize.
+    fun bubbleSize(changeSize: Int, maxSize: Float, densityScale: Float = 1f): Float {
+        val scaleFactor = 5f * (maxSize / 800f)
+        val minRadius = maxOf(15f * densityScale, 15f)
+        val radius = maxOf(sqrt(abs(changeSize).toFloat()) * scaleFactor, minRadius)
+        val diameter = radius * 2f
+        return minOf(diameter, maxSize)
+    }
+
+    /// Ripple ring progress for ring index (0 or 1) at given bubble age.
+    /// Returns null if the ring hasn't started or has finished.
+    fun rippleProgress(ringIndex: Int, age: Double): Float? {
+        val ringStart = ringIndex * RIPPLE_STAGGER
+        val ringAge = age - ringStart
+        if (ringAge < 0 || ringAge > RIPPLE_DURATION) return null
+        return (ringAge / RIPPLE_DURATION).toFloat()
+    }
+
+    /// Ease-out quadratic: t -> 1 - (1-t)^2
+    fun easeOutQuad(t: Float): Float {
+        return 1f - (1f - t) * (1f - t)
     }
 }
 
-/** Returns (fillColor, labelColor) for a bubble based on edit type. */
-fun bubbleColors(edit: WikipediaArticleEdit): Pair<Color, Color> {
+/** Returns (fillColor, labelColor, labelShadowColor) for a bubble based on edit type. */
+fun bubbleColors(edit: WikipediaArticleEdit): Triple<Color, Color, Color> {
     val isDeletion = edit.changeSize < 0
-    return when {
+    val (fillColor, labelColor) = when {
         edit.isBot -> if (isDeletion) Pair(BubbleDarkPurple, BubblePurple) else Pair(BubblePurple, BubbleDarkPurple)
         edit.isAnonymous -> if (isDeletion) Pair(BubbleDarkGreen, BubbleGreen) else Pair(BubbleGreen, BubbleDarkGreen)
         else -> if (isDeletion) Pair(BubbleDarkWhite, BubbleWhite) else Pair(BubbleWhite, BubbleDarkWhite)
     }
+    return Triple(fillColor, labelColor, fillColor.copy(alpha = 0.5f))
 }
 
 /** Constructs the Wikipedia article URL for the given edit. */

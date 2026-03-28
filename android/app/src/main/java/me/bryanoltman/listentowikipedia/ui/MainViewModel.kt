@@ -13,9 +13,11 @@ import kotlinx.coroutines.launch
 import me.bryanoltman.listentowikipedia.audio.NotePlayer
 import me.bryanoltman.listentowikipedia.data.AppSettings
 import me.bryanoltman.listentowikipedia.data.SoundFontParser
+import me.bryanoltman.listentowikipedia.model.EditSoundType
 import me.bryanoltman.listentowikipedia.model.MusicalScale
 import me.bryanoltman.listentowikipedia.model.SoundFontInstrument
 import me.bryanoltman.listentowikipedia.model.WikipediaEvent
+import me.bryanoltman.listentowikipedia.model.WikipediaNewUser
 import me.bryanoltman.listentowikipedia.network.WikipediaWebSocketService
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
@@ -30,7 +32,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _tappedBubble = MutableStateFlow<Bubble?>(null)
     val tappedBubble: StateFlow<Bubble?> = _tappedBubble.asStateFlow()
 
+    private val _tappedBubbleId = MutableStateFlow<String?>(null)
+    val tappedBubbleId: StateFlow<String?> = _tappedBubbleId.asStateFlow()
+
+    private val _tapTimeNanos = MutableStateFlow(0L)
+    val tapTimeNanos: StateFlow<Long> = _tapTimeNanos.asStateFlow()
+
+    private val _newUser = MutableStateFlow<WikipediaNewUser?>(null)
+    val newUser: StateFlow<WikipediaNewUser?> = _newUser.asStateFlow()
+
     private var toastDismissJob: Job? = null
+    private var bannerDismissJob: Job? = null
 
     private val _instruments = MutableStateFlow<List<SoundFontInstrument>>(emptyList())
     val instruments: StateFlow<List<SoundFontInstrument>> = _instruments.asStateFlow()
@@ -39,7 +51,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     var canvasWidth: Float = 400f
 
     init {
-        notePlayer.start()
+        notePlayer.start(settings.instrumentPrograms.value)
 
         // Parse SF2 instruments eagerly so the list is ready before settings opens
         viewModelScope.launch(Dispatchers.IO) {
@@ -58,24 +70,46 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
         // React to instrument changes
         viewModelScope.launch {
-            settings.selectedInstrumentProgram.collect { program ->
-                notePlayer.loadInstrument(program)
+            settings.instrumentPrograms.collect { programs ->
+                for ((type, program) in programs) {
+                    notePlayer.loadInstrument(program, type)
+                }
             }
         }
 
         // Process incoming WebSocket events
         viewModelScope.launch {
             webSocketService.events.collect { event ->
-                if (event is WikipediaEvent.ArticleEdit) {
-                    val edit = event.edit
-                    addBubble(edit)
-                    if (!settings.isMuted.value) {
-                        val note = MusicalScale.noteForEdit(
-                            changeSize = edit.changeSize,
-                            scale = settings.currentScale.value
-                        )
-                        if (note != null) {
-                            notePlayer.play(note)
+                when (event) {
+                    is WikipediaEvent.ArticleEdit -> {
+                        val edit = event.edit
+                        addBubble(edit)
+                        if (!settings.isMuted.value) {
+                            val note = MusicalScale.noteForEdit(
+                                changeSize = edit.changeSize,
+                                scale = settings.currentScale.value
+                            )
+                            if (note != null) {
+                                val soundType = if (edit.changeSize >= 0)
+                                    EditSoundType.ADDITION else EditSoundType.SUBTRACTION
+                                notePlayer.play(note, type = soundType)
+                            }
+                        }
+                    }
+                    is WikipediaEvent.NewUser -> {
+                        val user = event.user
+                        _newUser.value = user
+                        bannerDismissJob?.cancel()
+                        bannerDismissJob = viewModelScope.launch {
+                            delay(8000)
+                            _newUser.value = null
+                        }
+                        if (!settings.isMuted.value) {
+                            val scale = settings.currentScale.value
+                            if (scale.isNotEmpty()) {
+                                val randomNote = scale.random()
+                                notePlayer.play(randomNote, type = EditSoundType.NEW_USER)
+                            }
                         }
                     }
                 }
@@ -85,13 +119,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun addBubble(edit: me.bryanoltman.listentowikipedia.model.WikipediaArticleEdit) {
         val now = System.nanoTime()
-        val (fill, label) = bubbleColors(edit)
+        val (fill, label, shadow) = bubbleColors(edit)
         val bubble = Bubble(
             creationTimeNanos = now,
             normalizedX = (0.05f + Math.random().toFloat() * 0.90f),
             normalizedY = (0.05f + Math.random().toFloat() * 0.90f),
             fillColor = fill,
             labelColor = label,
+            labelShadowColor = shadow,
             size = BubblePhysics.bubbleSize(edit.changeSize, canvasWidth / 2f),
             title = edit.pageTitle,
             articleUrl = articleUrl(edit.language, edit.pageTitle)
@@ -102,11 +137,21 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun onBubbleTapped(bubble: Bubble) {
         _tappedBubble.value = bubble
+        _tappedBubbleId.value = bubble.id
+        _tapTimeNanos.value = System.nanoTime()
         toastDismissJob?.cancel()
         toastDismissJob = viewModelScope.launch {
             delay(3000)
             _tappedBubble.value = null
         }
+    }
+
+    fun onStart() {
+        syncConnections(settings.selectedLanguageCodes.value)
+    }
+
+    fun onStop() {
+        webSocketService.disconnectAll()
     }
 
     private fun syncConnections(selected: Set<String>) {

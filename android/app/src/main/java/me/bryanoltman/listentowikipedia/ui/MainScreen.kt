@@ -21,6 +21,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -32,20 +33,40 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import java.net.URLEncoder
 import me.bryanoltman.listentowikipedia.ui.theme.DarkBackground
 
 @Composable
 fun MainScreen(viewModel: MainViewModel) {
     val bubbles by viewModel.bubbles.collectAsState()
     val tappedBubble by viewModel.tappedBubble.collectAsState()
+    val tappedBubbleId by viewModel.tappedBubbleId.collectAsState()
+    val tapTimeNanos by viewModel.tapTimeNanos.collectAsState()
+    val newUser by viewModel.newUser.collectAsState()
     val isMuted by viewModel.settings.isMuted.collectAsState()
     val context = LocalContext.current
     val density = LocalDensity.current
 
     var showSettings by remember { mutableStateOf(false) }
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_START -> viewModel.onStart()
+                Lifecycle.Event.ON_STOP -> viewModel.onStop()
+                else -> {}
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 
     Box(
         modifier = Modifier
@@ -61,6 +82,8 @@ fun MainScreen(viewModel: MainViewModel) {
         ) {
             BubblesCanvas(
                 bubbles = bubbles,
+                tappedBubbleId = tappedBubbleId,
+                tapTimeNanos = tapTimeNanos,
                 onBubbleTap = { viewModel.onBubbleTapped(it) }
             )
         }
@@ -116,6 +139,22 @@ fun MainScreen(viewModel: MainViewModel) {
                 .align(Alignment.BottomCenter)
                 .windowInsetsPadding(WindowInsets.navigationBars)
         )
+
+        // New user banner
+        NewUserBanner(
+            user = newUser,
+            onTap = {
+                newUser?.let { u ->
+                    val encoded = URLEncoder.encode(u.username, "UTF-8")
+                    val url = "https://${u.language}.wikipedia.org/w/index.php?title=User_talk:$encoded&action=edit&section=new"
+                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                }
+            },
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .windowInsetsPadding(WindowInsets.statusBars)
+        )
+
     }
 
     // Settings as a full-screen dialog (no experimental APIs)

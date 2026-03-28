@@ -13,7 +13,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -23,6 +25,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -31,6 +34,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -47,8 +51,11 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import me.bryanoltman.listentowikipedia.data.AppSettings
+import me.bryanoltman.listentowikipedia.model.EditSoundType
+import me.bryanoltman.listentowikipedia.model.HeptatonicMode
 import me.bryanoltman.listentowikipedia.model.MusicalKey
-import me.bryanoltman.listentowikipedia.model.MusicalMode
+import me.bryanoltman.listentowikipedia.model.PentatonicMode
+import me.bryanoltman.listentowikipedia.model.ScaleType
 import me.bryanoltman.listentowikipedia.model.SoundFontInstrument
 import me.bryanoltman.listentowikipedia.model.WikipediaLanguage
 import me.bryanoltman.listentowikipedia.ui.theme.BubbleGreen
@@ -65,18 +72,43 @@ fun SettingsScreen(
     val context = LocalContext.current
     val selectedLanguages by settings.selectedLanguageCodes.collectAsState()
     val musicalKey by settings.musicalKey.collectAsState()
-    val musicalMode by settings.musicalMode.collectAsState()
+    val scaleType by settings.scaleType.collectAsState()
+    val heptatonicMode by settings.heptatonicMode.collectAsState()
+    val pentatonicMode by settings.pentatonicMode.collectAsState()
     val isMuted by settings.isMuted.collectAsState()
-    val instrumentProgram by settings.selectedInstrumentProgram.collectAsState()
+    val instrumentPrograms by settings.instrumentPrograms.collectAsState()
     val rootOctave by settings.rootOctave.collectAsState()
     val octaveRange by settings.octaveRange.collectAsState()
+
+    var showResetDialog by remember { mutableStateOf(false) }
+
+    if (showResetDialog) {
+        AlertDialog(
+            onDismissRequest = { showResetDialog = false },
+            title = { Text("Reset to Defaults") },
+            text = { Text("This will reset all music settings to their default values.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    settings.resetToDefaults()
+                    showResetDialog = false
+                }) {
+                    Text("Reset")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showResetDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(DarkBackground)
     ) {
-        // Header row replacing TopAppBar
+        // Header row
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -98,8 +130,8 @@ fun SettingsScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 16.dp)
-                .navigationBarsPadding(),
+                .padding(horizontal = 16.dp),
+            contentPadding = WindowInsets.navigationBars.asPaddingValues(),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             // ---- Music Settings ----
@@ -127,40 +159,44 @@ fun SettingsScreen(
                 }
             }
 
-            // Instrument picker
+            // Per-type instrument pickers
             if (instruments.isNotEmpty()) {
-                item {
-                    val selectedInstrument = instruments.find { it.program == instrumentProgram }
-                    val instrumentIndex = instruments.indexOfFirst { it.program == instrumentProgram }
-                    var showInstrumentDialog by remember { mutableStateOf(false) }
-                    Box(modifier = Modifier.fillMaxWidth()) {
-                        OutlinedTextField(
-                            value = selectedInstrument?.name ?: "Program $instrumentProgram",
-                            onValueChange = {},
-                            readOnly = true,
-                            label = { Text("Instrument") },
-                            trailingIcon = {
-                                Icon(Icons.Default.ArrowDropDown, contentDescription = null)
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Box(
-                            modifier = Modifier
-                                .matchParentSize()
-                                .clickable { showInstrumentDialog = true }
-                        )
-                    }
-                    if (showInstrumentDialog) {
-                        ListPickerDialog(
-                            title = "Select Instrument",
-                            options = instruments.map { it.name },
-                            selectedIndex = instrumentIndex,
-                            onSelect = { index ->
-                                settings.setSelectedInstrumentProgram(instruments[index].program)
-                                showInstrumentDialog = false
-                            },
-                            onDismiss = { showInstrumentDialog = false }
-                        )
+                for (type in EditSoundType.entries) {
+                    item(key = "instrument_${type.name}") {
+                        val currentProgram = instrumentPrograms[type] ?: type.defaultProgram
+                        val selectedInstrument = instruments.find { it.program == currentProgram }
+                        val selectedIndex = instruments.indexOfFirst { it.program == currentProgram }
+                        var showDialog by remember { mutableStateOf(false) }
+
+                        Box(modifier = Modifier.fillMaxWidth()) {
+                            OutlinedTextField(
+                                value = selectedInstrument?.name ?: "Program $currentProgram",
+                                onValueChange = {},
+                                readOnly = true,
+                                label = { Text("${type.displayName} Instrument") },
+                                trailingIcon = {
+                                    Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .matchParentSize()
+                                    .clickable { showDialog = true }
+                            )
+                        }
+                        if (showDialog) {
+                            ListPickerDialog(
+                                title = "Select ${type.displayName} Instrument",
+                                options = instruments.map { it.name },
+                                selectedIndex = selectedIndex,
+                                onSelect = { index ->
+                                    settings.setInstrumentProgram(type, instruments[index].program)
+                                    showDialog = false
+                                },
+                                onDismiss = { showDialog = false }
+                            )
+                        }
                     }
                 }
             }
@@ -199,12 +235,73 @@ fun SettingsScreen(
                 }
             }
 
-            // Mode picker
+            // Scale type picker
             item {
-                var showModeDialog by remember { mutableStateOf(false) }
+                var showScaleTypeDialog by remember { mutableStateOf(false) }
                 Box(modifier = Modifier.fillMaxWidth()) {
                     OutlinedTextField(
-                        value = musicalMode.displayName,
+                        value = scaleType.displayName,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Scale Type") },
+                        trailingIcon = {
+                            Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .clickable { showScaleTypeDialog = true }
+                    )
+                }
+                if (showScaleTypeDialog) {
+                    ListPickerDialog(
+                        title = "Select Scale Type",
+                        options = ScaleType.entries.map { it.displayName },
+                        selectedIndex = ScaleType.entries.indexOf(scaleType),
+                        onSelect = { index ->
+                            settings.setScaleType(ScaleType.entries[index])
+                            showScaleTypeDialog = false
+                        },
+                        onDismiss = { showScaleTypeDialog = false }
+                    )
+                }
+            }
+
+            // Mode picker (conditional on scale type)
+            item {
+                var showModeDialog by remember { mutableStateOf(false) }
+
+                val modeLabel: String
+                val modeOptions: List<String>
+                val modeSelectedIndex: Int
+                val onModeSelect: (Int) -> Unit
+
+                when (scaleType) {
+                    ScaleType.PENTATONIC -> {
+                        modeLabel = pentatonicMode.displayName
+                        modeOptions = PentatonicMode.entries.map { it.displayName }
+                        modeSelectedIndex = PentatonicMode.entries.indexOf(pentatonicMode)
+                        onModeSelect = { index ->
+                            settings.setPentatonicMode(PentatonicMode.entries[index])
+                            showModeDialog = false
+                        }
+                    }
+                    ScaleType.HEPTATONIC -> {
+                        modeLabel = heptatonicMode.displayName
+                        modeOptions = HeptatonicMode.entries.map { it.displayName }
+                        modeSelectedIndex = HeptatonicMode.entries.indexOf(heptatonicMode)
+                        onModeSelect = { index ->
+                            settings.setHeptatonicMode(HeptatonicMode.entries[index])
+                            showModeDialog = false
+                        }
+                    }
+                }
+
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    OutlinedTextField(
+                        value = modeLabel,
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("Mode") },
@@ -222,12 +319,9 @@ fun SettingsScreen(
                 if (showModeDialog) {
                     ListPickerDialog(
                         title = "Select Mode",
-                        options = MusicalMode.entries.map { it.displayName },
-                        selectedIndex = MusicalMode.entries.indexOf(musicalMode),
-                        onSelect = { index ->
-                            settings.setMusicalMode(MusicalMode.entries[index])
-                            showModeDialog = false
-                        },
+                        options = modeOptions,
+                        selectedIndex = modeSelectedIndex,
+                        onSelect = onModeSelect,
                         onDismiss = { showModeDialog = false }
                     )
                 }
@@ -251,6 +345,17 @@ fun SettingsScreen(
                     range = 1..4,
                     onValueChange = { settings.setOctaveRange(it) }
                 )
+            }
+
+            // Reset to defaults
+            item {
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedButton(
+                    onClick = { showResetDialog = true },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Reset to Defaults")
+                }
             }
 
             // ---- Languages ----

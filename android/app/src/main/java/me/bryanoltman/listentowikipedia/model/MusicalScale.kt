@@ -4,7 +4,7 @@ import kotlin.math.abs
 import kotlin.math.ln
 import kotlin.math.roundToInt
 
-enum class MusicalMode(val displayName: String, val intervals: List<Int>) {
+enum class HeptatonicMode(val displayName: String, val intervals: List<Int>) {
     IONIAN("Ionian (Major)", listOf(2, 2, 1, 2, 2, 2, 1)),
     DORIAN("Dorian", listOf(2, 1, 2, 2, 2, 1, 2)),
     PHRYGIAN("Phrygian", listOf(1, 2, 2, 2, 1, 2, 2)),
@@ -32,11 +32,11 @@ enum class MusicalKey(val displayName: String, val semitone: Int) {
 }
 
 object MusicalScale {
-    fun notes(root: Int, mode: MusicalMode, octaves: Int = 2): List<Int> {
+    fun notes(root: Int, intervals: List<Int>, octaves: Int = 2): List<Int> {
         val result = mutableListOf(root)
         var current = root
         for (octave in 0 until octaves) {
-            for (interval in mode.intervals) {
+            for (interval in intervals) {
                 current += interval
                 if (current > 127) return result
                 result.add(current)

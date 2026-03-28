@@ -34,7 +34,7 @@ data class WikipediaLanguage(val name: String, val code: String) {
             WikipediaLanguage("Tamil", "ta"),
             WikipediaLanguage("Telugu", "te"),
             WikipediaLanguage("Ukrainian", "uk"),
-            WikipediaLanguage("Western Mari", "mr"),
+            WikipediaLanguage("Marathi", "mr"),
         )
     }
 }
