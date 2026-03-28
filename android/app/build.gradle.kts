@@ -60,6 +60,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.mididriver)
     implementation(libs.androidx.compose.material.icons.extended)
+    implementation(libs.androidx.core.splashscreen)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
