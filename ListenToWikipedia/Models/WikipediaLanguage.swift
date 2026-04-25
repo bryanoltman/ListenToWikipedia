@@ -42,6 +42,6 @@ struct WikipediaLanguage: Identifiable, Hashable, Comparable {
     WikipediaLanguage(name: "Tamil", code: "ta"),
     WikipediaLanguage(name: "Telugu", code: "te"),
     WikipediaLanguage(name: "Ukrainian", code: "uk"),
-    WikipediaLanguage(name: "Western Mari", code: "mr"),
+    WikipediaLanguage(name: "Marathi", code: "mr"),
   ]
 }
