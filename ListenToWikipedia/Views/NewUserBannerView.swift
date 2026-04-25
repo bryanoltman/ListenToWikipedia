@@ -27,6 +27,8 @@ struct NewUserBannerView: View {
       )
     }
     .buttonStyle(.plain)
+    .accessibilityLabel("Welcome new user \(user.username)")
+    .accessibilityHint("Opens their talk page")
     .transition(.move(edge: .top).combined(with: .opacity))
   }
 }

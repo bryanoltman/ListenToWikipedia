@@ -13,6 +13,7 @@ struct ArticleToastView: View {
           .font(.subheadline.bold())
           .foregroundColor(.white)
           .multilineTextAlignment(.center)
+          .lineLimit(2)
         if articleURL != nil {
           Image(systemName: "arrow.up.right")
             .font(.caption.bold())
@@ -21,8 +22,11 @@ struct ArticleToastView: View {
       }
       .padding()
       .toastBackground()
+      .frame(maxWidth: 500)
     }
     .buttonStyle()
+    .accessibilityLabel("Article: \(title)")
+    .accessibilityHint(articleURL != nil ? "Opens article in browser" : "")
     .transition(.move(edge: .bottom).combined(with: .opacity))
   }
 }
@@ -30,7 +34,7 @@ struct ArticleToastView: View {
 extension View {
   @ViewBuilder
   fileprivate func buttonStyle() -> some View {
-    if #available(iOS 26, macOS 26, *) {
+    if #available(iOS 26, macOS 26, tvOS 26, *) {
       self.buttonStyle(.glass)
     } else {
       self.buttonStyle(.plain)
@@ -39,7 +43,7 @@ extension View {
 
   @ViewBuilder
   fileprivate func toastBackground() -> some View {
-    if #available(iOS 26, macOS 26, *) {
+    if #available(iOS 26, macOS 26, tvOS 26, *) {
       self
     } else {
       self.background {
