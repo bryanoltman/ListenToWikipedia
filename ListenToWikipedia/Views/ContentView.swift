@@ -42,6 +42,7 @@ struct ContentView: View {
           .buttonBorderShape(.circle)
           .buttonStyle(.glass)
           .padding([.leading])
+          .accessibilityLabel("Settings")
         } else {
           Button(action: openSettingsAction) {
             Image(systemName: "gearshape.fill")
@@ -53,6 +54,7 @@ struct ContentView: View {
           .buttonBorderShape(.circle)
           .buttonStyle(.plain)
           .padding([.leading])
+          .accessibilityLabel("Settings")
         }
       }
     #endif
@@ -78,6 +80,25 @@ struct ContentView: View {
         .padding([.top], 4)
       }
     }
+    .overlay(alignment: .top) {
+      if service.connectedLanguages.isEmpty && !settings.selectedLanguageCodes.isEmpty {
+        Text("Connecting...")
+          .font(.caption)
+          .foregroundColor(.white.opacity(0.7))
+          .padding(.horizontal, 12)
+          .padding(.vertical, 6)
+          .background(
+            Capsule().fill(Color.black.opacity(0.5))
+          )
+          .padding(.top, 50)
+          .transition(.opacity)
+      }
+    }
+    .overlay {
+      if manager.bubbles.isEmpty {
+        emptyStateView
+      }
+    }
     .animation(
       .spring(response: 0.3, dampingFraction: 0.7),
       value: newUser?.username
@@ -87,9 +108,9 @@ struct ContentView: View {
       value: tappedBubble?.id
     )
     #if !os(tvOS)
-      .sheet(isPresented: $isShowingSettings) {
-        SettingsView()
-      }
+    .sheet(isPresented: $isShowingSettings) {
+      SettingsView()
+    }
     #endif
     .onChange(of: scenePhase) { _, phase in
       if phase == .active {
@@ -150,6 +171,23 @@ struct ContentView: View {
       try? await Task.sleep(for: .seconds(8))
       guard !Task.isCancelled else { return }
       newUser = nil
+    }
+  }
+
+  @ViewBuilder
+  private var emptyStateView: some View {
+    if settings.selectedLanguageCodes.isEmpty {
+      VStack(spacing: 12) {
+        Image(systemName: "globe")
+          .font(.largeTitle)
+          .foregroundColor(.white.opacity(0.4))
+        Text("No languages selected")
+          .font(.headline)
+          .foregroundColor(.white.opacity(0.6))
+        Text("Open Settings to select at least one language.")
+          .font(.subheadline)
+          .foregroundColor(.white.opacity(0.4))
+      }
     }
   }
 
