@@ -97,7 +97,10 @@
   }
 
   #Preview {
-    SettingsView()
+    Color.clear
+      .sheet(isPresented: .constant(true)) {
+        SettingsView()
+      }
       .environmentObject(AppSettings.shared)
   }
 #endif
