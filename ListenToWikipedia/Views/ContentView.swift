@@ -188,12 +188,6 @@ struct ContentView: View {
           .font(.subheadline)
           .foregroundColor(.white.opacity(0.4))
       }
-    } else {
-      VStack(spacing: 8) {
-        Text("Listening for edits...")
-          .font(.subheadline)
-          .foregroundColor(.white.opacity(0.4))
-      }
     }
   }
 
