@@ -126,6 +126,7 @@ class BubbleManager: ObservableObject {
   var viewSize: CGSize = CGSize(width: 400, height: 400)
   private(set) var tappedBubbleID: UUID?
   private(set) var tapTime: TimeInterval = 0
+  private var pruneTimer: Timer?
 
   @MainActor
   func addBubble(from edit: WikipediaArticleEdit) {
@@ -176,6 +177,29 @@ class BubbleManager: ObservableObject {
     tapTime = Date.timeIntervalSinceReferenceDate
   }
 
+  /// Removes bubbles whose lifespan has elapsed.
+  @MainActor
+  func pruneExpiredBubbles() {
+    let currentTime = Date.timeIntervalSinceReferenceDate
+    bubbles.removeAll { currentTime - $0.creationTime > BubblePhysics.lifespan }
+  }
+
+  /// Starts a repeating 1-second timer that prunes expired bubbles.
+  func startPruning() {
+    pruneTimer?.invalidate()
+    pruneTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+      Task { @MainActor [weak self] in
+        self?.pruneExpiredBubbles()
+      }
+    }
+  }
+
+  /// Stops the prune timer.
+  func stopPruning() {
+    pruneTimer?.invalidate()
+    pruneTimer = nil
+  }
+
   private static func articleURL(language: String, pageTitle: String) -> URL? {
     let encodedTitle =
       pageTitle
@@ -213,13 +237,11 @@ struct BubblesView: View {
 
   @State private var gestureActive = false
 
-  private var fontSize: CGFloat {
-    #if os(tvOS)
-      18.0
-    #else
-      9.0
-    #endif
-  }
+  #if os(tvOS)
+    @ScaledMetric(relativeTo: .caption2) private var fontSize: CGFloat = 18.0
+  #else
+    @ScaledMetric(relativeTo: .caption2) private var fontSize: CGFloat = 9.0
+  #endif
 
   var body: some View {
     GeometryReader { geometry in
@@ -357,7 +379,11 @@ struct BubblesView: View {
               }
           )
         #endif
-        .onAppear { manager.viewSize = geometry.size }
+        .onAppear {
+          manager.viewSize = geometry.size
+          manager.startPruning()
+        }
+        .onDisappear { manager.stopPruning() }
         .onChange(of: geometry.size) { _, size in manager.viewSize = size }
       }
     }
