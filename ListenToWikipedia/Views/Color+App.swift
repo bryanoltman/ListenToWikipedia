@@ -47,7 +47,7 @@ extension Color {
     blue: 0x3D / 255.0
   )
 
-  static let dotWhiteDark = Color(white: 0.30)
+  static let dotWhiteDark = Color(white: 0.38)
 
   // MARK: - Overlay surfaces
 
