@@ -15,7 +15,6 @@ struct AboutView: View {
 
   private var bodyContent: some View {
     VStack(alignment: .leading, spacing: 32) {
-
       VStack(alignment: .leading, spacing: 12) {
         Text("How It Works")
           .font(.title2.bold())
@@ -76,9 +75,22 @@ struct AboutView: View {
         }
         .buttonStyle(.plain)
       }
+
+      Divider()
+
+      VStack(alignment: .leading, spacing: 4) {
+        if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String,
+          let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String
+        {
+          Text("Version \(version) (\(build))")
+            .font(.footnote)
+            .foregroundColor(.secondary)
+        }
+      }
+
     }
     .padding(24)
-    .frame(width: 400)
+    .frame(maxWidth: 400)
     .fixedSize(horizontal: false, vertical: true)
   }
 
@@ -95,7 +107,12 @@ struct AboutView: View {
 }
 
 #Preview {
-  NavigationStack {
-    AboutView()
-  }
+  Color.clear
+    .sheet(isPresented: .constant(true)) {
+      NavigationStack {
+        AboutView()
+          .navigationTitle("About")
+          .navigationBarTitleDisplayMode(.inline)
+      }
+    }
 }
