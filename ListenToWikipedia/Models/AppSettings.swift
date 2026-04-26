@@ -15,9 +15,9 @@ class AppSettings: ObservableObject {
   @Published var isMuted: Bool
   /// Per-edit-type SF2 instrument selection.
   @Published var instrumentPrograms: [EditSoundType: InstrumentId]
-  /// The octave at which the scale root note sits (0–8, default 2 matching HatnoteListen's B2).
+  /// The octave at which the scale root note sits (0–8, default 1 matching HatnoteListen's B2).
   @Published var rootOctave: Int
-  /// How many octaves the generated scale spans (1–4, default 2).
+  /// How many octaves the generated scale spans (1–4, default 3).
   @Published var octaveRange: Int
 
   private var cancellables = Set<AnyCancellable>()
