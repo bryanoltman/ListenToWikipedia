@@ -2,7 +2,7 @@ import Foundation
 
 /// Parses the preset headers from a SoundFont 2 (.sf2) file.
 /// https://en.wikipedia.org/wiki/SoundFont
-/// https://www.synthfont.com/SFSPEC21.PDF///
+/// https://www.synthfont.com/SFSPEC21.PDF
 enum SoundFontParser {
   // SoundFont 2.01 SFPresetHeader is exactly 38 bytes (packed):
   //   char     presetName[20]
