@@ -33,7 +33,7 @@
 		ED846DD12F6CED3700FFB4A5 /* Exceptions for "ListenToWikipedia" folder in "ListenToWikipedia" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				"iOS-Info.plist",
+				"Info.plist",
 			);
 			target = EDAD5B462F66372900200CA8 /* ListenToWikipedia */;
 		};
@@ -409,7 +409,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_TOP_SHELF_IMAGE_NAME = "Top Shelf Image";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 9422A6P5N6;
 				ENABLE_APP_SANDBOX = YES;
@@ -427,8 +427,7 @@
 				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				"INFOPLIST_FILE[sdk=iphoneos*]" = "ListenToWikipedia/iOS-Info.plist";
-				"INFOPLIST_FILE[sdk=iphonesimulator*]" = "ListenToWikipedia/iOS-Info.plist";
+				INFOPLIST_FILE = "ListenToWikipedia/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Listen To Wikipedia";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.reference";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
@@ -445,7 +444,6 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.7;
-				TVOS_DEPLOYMENT_TARGET = 17.6;
 				MARKETING_VERSION = 2.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = HatnoteListen;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -472,7 +470,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_TOP_SHELF_IMAGE_NAME = "Top Shelf Image";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 9422A6P5N6;
 				ENABLE_APP_SANDBOX = YES;
@@ -490,8 +488,7 @@
 				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				"INFOPLIST_FILE[sdk=iphoneos*]" = "ListenToWikipedia/iOS-Info.plist";
-				"INFOPLIST_FILE[sdk=iphonesimulator*]" = "ListenToWikipedia/iOS-Info.plist";
+				INFOPLIST_FILE = "ListenToWikipedia/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Listen To Wikipedia";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.reference";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
@@ -508,7 +505,6 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.7;
-				TVOS_DEPLOYMENT_TARGET = 17.6;
 				MARKETING_VERSION = 2.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = HatnoteListen;
 				PRODUCT_NAME = "$(TARGET_NAME)";
