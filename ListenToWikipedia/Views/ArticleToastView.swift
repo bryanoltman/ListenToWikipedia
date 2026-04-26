@@ -22,8 +22,8 @@ struct ArticleToastView: View {
       }
       .padding()
       .toastBackground()
-      .frame(maxWidth: 500)
     }
+    .frame(maxWidth: 500)
     .buttonStyle()
     .accessibilityLabel("Article: \(title)")
     .accessibilityHint(articleURL != nil ? "Opens article in browser" : "")
@@ -56,11 +56,13 @@ extension View {
 }
 
 #Preview {
-  ZStack {
-    Spacer()
-  }
-  .overlay(alignment: .bottom) {
-    ArticleToastView(title: "Patrick Swayze", articleURL: URL(string: "https://en.wikipedia.org/wiki/Patrick_Swayze")) {
+  Color(.black)
+    .ignoresSafeArea()
+    .overlay(alignment: .bottom) {
+      ArticleToastView(
+        title: "Patrick Swayze",
+        articleURL: URL(string: "https://en.wikipedia.org/wiki/Patrick_Swayze")
+      ) {
+      }
     }
-  }
 }
