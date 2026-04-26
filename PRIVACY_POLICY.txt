@@ -1,0 +1,21 @@
+Privacy Policy for Listen to Wikipedia
+
+Last updated: April 26, 2026
+
+Listen to Wikipedia does not collect, store, or share any personal information.
+
+What the app does:
+- Connects to a public WebSocket service (wikimon.hatnote.com) to receive a real-time stream of Wikipedia edits. This connection does not transmit any information about you.
+- Stores your preferences (selected languages, audio settings) locally on your device using standard system storage. These preferences never leave your device.
+
+What the app does not do:
+- Collect personal data of any kind
+- Use analytics, crash reporting, or tracking services
+- Require or support user accounts
+- Share data with third parties
+- Use cookies or advertising identifiers
+
+The app contains no third-party SDKs or frameworks. It is built entirely with Apple system APIs.
+
+Contact:
+If you have questions about this privacy policy, contact Bryan Oltman at me@bryanoltman.com
