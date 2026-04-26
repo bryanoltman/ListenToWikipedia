@@ -4,7 +4,7 @@ struct AboutView: View {
   @Environment(\.openURL) private var openURL
 
   var body: some View {
-    #if os(iOS)
+    #if os(iOS) || os(tvOS)
       ScrollView {
         bodyContent
       }
@@ -41,6 +41,9 @@ struct AboutView: View {
         )
         .font(.body)
       }
+      #if os(tvOS)
+        .focusable()
+      #endif
 
       Divider()
 
@@ -51,29 +54,42 @@ struct AboutView: View {
         Text("Developed by Bryan Oltman")
           .font(.body)
 
-        Button {
-          if let url = URL(string: "http://listen.hatnote.com") {
-            openURL(url)
+        #if os(iOS) || os(macOS)
+          Button {
+            if let url = URL(string: "http://listen.hatnote.com") {
+              openURL(url)
+            }
+          } label: {
+            Text("Inspired by Hatnote's Listen to Wikipedia")
+              .font(.body)
+              .underline()
           }
-        } label: {
+          .buttonStyle(.plain)
+        #else
           Text("Inspired by Hatnote's Listen to Wikipedia")
             .font(.body)
             .underline()
-        }
-        .buttonStyle(.plain)
+        #endif
 
-        Button {
-          if let url = URL(string: "https://www.schristiancollins.com/generaluser") {
-            openURL(url)
+        #if os(iOS) || os(macOS)
+          Button {
+            if let url = URL(string: "https://www.schristiancollins.com/generaluser") {
+              openURL(url)
+            }
+          } label: {
+            Text(
+              "\"GeneralUser GS\" SoundFont by S. Christian Collins, GeneralUser GS License v2.0"
+            )
+            .font(.body)
+            .underline()
           }
-        } label: {
+          .buttonStyle(.plain)
+        #else
           Text(
             "\"GeneralUser GS\" SoundFont by S. Christian Collins, GeneralUser GS License v2.0"
           )
           .font(.body)
-          .underline()
-        }
-        .buttonStyle(.plain)
+        #endif
       }
 
       Divider()
@@ -87,11 +103,16 @@ struct AboutView: View {
             .foregroundColor(.secondary)
         }
       }
+      #if os(tvOS)
+        .focusable()
+      #endif
     }
     .fixedSize(horizontal: false, vertical: true)
     .padding(24)
     .frame(maxWidth: 400)
-    .navigationTitle("About")
+    #if !os(tvOS)
+      .navigationTitle("About")
+    #endif
   }
 
   private func legendRow(color: Color, label: String) -> some View {
