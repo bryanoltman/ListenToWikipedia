@@ -87,11 +87,11 @@ struct AboutView: View {
             .foregroundColor(.secondary)
         }
       }
-
     }
+    .fixedSize(horizontal: false, vertical: true)
     .padding(24)
     .frame(maxWidth: 400)
-    .fixedSize(horizontal: false, vertical: true)
+    .navigationTitle("About")
   }
 
   private func legendRow(color: Color, label: String) -> some View {
@@ -111,7 +111,6 @@ struct AboutView: View {
     .sheet(isPresented: .constant(true)) {
       NavigationStack {
         AboutView()
-          .navigationTitle("About")
           .navigationBarTitleDisplayMode(.inline)
       }
     }
