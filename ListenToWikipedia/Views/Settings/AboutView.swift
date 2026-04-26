@@ -132,7 +132,7 @@ struct AboutView: View {
     .sheet(isPresented: .constant(true)) {
       NavigationStack {
         AboutView()
-          #if !os(tvOS)
+          #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
           #endif
       }
