@@ -97,9 +97,38 @@ struct SettingsView: View {
   #endif
 
   #if os(tvOS)
-  private var tvOSBody: some View {
-    EmptyView()
-  }
+    private var tvOSBody: some View {
+      NavigationStack {
+        Form {
+          NavigationLink("Languages") { LanguagesToggleView() }
+          NavigationLink("Audio") { AudioSettingsView() }
+          NavigationLink("About") { AboutView() }
+          Toggle("Mute", isOn: $settings.isMuted)
+
+          Section {
+            Button("Reset to Defaults", role: .destructive) {
+              isShowingResetConfirmation = true
+            }
+            .confirmationDialog(
+              "Reset all settings to their defaults?",
+              isPresented: $isShowingResetConfirmation,
+              titleVisibility: .visible
+            ) {
+              Button("Reset", role: .destructive) {
+                settings.resetToDefaults()
+              }
+            }
+          }
+
+        }
+        .navigationTitle("Settings")
+        .toolbar {
+          ToolbarItem(placement: .confirmationAction) {
+            Button("Done") { dismiss() }
+          }
+        }
+      }
+    }
   #endif
 }
 

@@ -26,38 +26,36 @@ struct ContentView: View {
       Color.appBackground
         .ignoresSafeArea()
     )
-    #if !os(tvOS)
-      .overlay(alignment: .topLeading) {
-        if #available(iOS 26.0, macOS 26.0, *) {
-          Button(action: openSettingsAction) {
-            Image(systemName: "gearshape.fill")
+    .overlay(alignment: .topLeading) {
+      if #available(iOS 26.0, macOS 26.0, tvOS 26.0, *) {
+        Button(action: openSettingsAction) {
+          Image(systemName: "gearshape.fill")
             .font(.title2)
             .foregroundColor(.white)
-              #if os(iOS)
-                .padding(4)
-              #else
-                .padding(8)
-              #endif
-          }
-          .buttonBorderShape(.circle)
-          .buttonStyle(.glass)
-          .padding([.leading])
-          .accessibilityLabel("Settings")
-        } else {
-          Button(action: openSettingsAction) {
-            Image(systemName: "gearshape.fill")
+            #if os(iOS)
+              .padding(4)
+            #else
+              .padding(8)
+            #endif
+        }
+        .buttonBorderShape(.circle)
+        .buttonStyle(.glass)
+        .padding([.leading])
+        .accessibilityLabel("Settings")
+      } else {
+        Button(action: openSettingsAction) {
+          Image(systemName: "gearshape.fill")
             .font(.title2)
             .foregroundColor(.white)
             .padding()
             .background(Circle().fill(Color.black.opacity(0.5)))
-          }
-          .buttonBorderShape(.circle)
-          .buttonStyle(.plain)
-          .padding([.leading])
-          .accessibilityLabel("Settings")
         }
+        .buttonBorderShape(.circle)
+        .buttonStyle(.plain)
+        .padding([.leading])
+        .accessibilityLabel("Settings")
       }
-    #endif
+    }
     .overlay(alignment: .bottom) {
       if let bubble = tappedBubble {
         ArticleToastView(title: bubble.title, articleURL: bubble.articleURL) {
@@ -107,11 +105,9 @@ struct ContentView: View {
       .spring(response: 0.3, dampingFraction: 0.7),
       value: tappedBubble?.id
     )
-    #if !os(tvOS)
     .sheet(isPresented: $isShowingSettings) {
       SettingsView()
     }
-    #endif
     .onChange(of: scenePhase) { _, phase in
       if phase == .active {
         syncConnections(to: settings.selectedLanguageCodes)
