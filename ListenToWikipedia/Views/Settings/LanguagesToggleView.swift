@@ -7,10 +7,6 @@ struct LanguagesToggleView: View {
     List {
       ForEach(WikipediaLanguage.all) { language in
         Toggle(language.name, isOn: languageToggleBinding(for: language))
-          .disabled(
-            settings.selectedLanguageCodes.contains(language.code)
-            && settings.selectedLanguageCodes.count == 1
-          )
       }
     }
     .navigationTitle("Languages")
@@ -22,7 +18,7 @@ struct LanguagesToggleView: View {
       set: { isOn in
         if isOn {
           settings.selectedLanguageCodes.insert(language.code)
-        } else if settings.selectedLanguageCodes.count > 1 {
+        } else {
           settings.selectedLanguageCodes.remove(language.code)
         }
       }
