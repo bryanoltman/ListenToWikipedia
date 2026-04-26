@@ -66,8 +66,7 @@ enum MusicalKey: String, CaseIterable, Identifiable {
 
 enum MusicalScale {
   /// Generates MIDI note values for a given root, mode, and number of octaves.
-  static func notes(root: UInt8, intervals: [Int], octaves: Int = 2) -> [UInt8]
-  {
+  static func notes(root: UInt8, intervals: [Int], octaves: Int = 2) -> [UInt8] {
     var notes: [UInt8] = [root]
     var current = Int(root)
     for _ in 0..<octaves {

@@ -139,7 +139,8 @@ class BubbleManager: ObservableObject {
       color: fill,
       labelColor: label,
       labelShadowColor: shadow,
-      size: BubblePhysics.size(forChangeSize: edit.changeSize, maxSize: max(viewSize.width, viewSize.height) * 2.0 / 3.0),
+      size: BubblePhysics.size(
+        forChangeSize: edit.changeSize, maxSize: max(viewSize.width, viewSize.height) * 2.0 / 3.0),
       title: edit.pageTitle,
       articleURL: Self.articleURL(
         language: edit.language,
