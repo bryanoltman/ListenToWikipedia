@@ -221,17 +221,17 @@ struct AudioSettingsView: View {
           }
         }
 
-//        Stepper(
-//          "Root octave: \(settings.rootOctave)",
-//          value: $settings.rootOctave,
-//          in: 0...8
-//        )
-//
-//        Stepper(
-//          "Octave range: \(settings.octaveRange)",
-//          value: $settings.octaveRange,
-//          in: 1...4
-//        )
+        //        Stepper(
+        //          "Root octave: \(settings.rootOctave)",
+        //          value: $settings.rootOctave,
+        //          in: 0...8
+        //        )
+        //
+        //        Stepper(
+        //          "Octave range: \(settings.octaveRange)",
+        //          value: $settings.octaveRange,
+        //          in: 1...4
+        //        )
       }
     }
     .navigationTitle("Audio")

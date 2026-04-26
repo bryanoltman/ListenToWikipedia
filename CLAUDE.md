@@ -16,16 +16,21 @@ ListenToWikipedia is a native Apple platform app that visualizes real-time Wikip
 
 ```bash
 # Build (iOS Simulator)
-xcodebuild -scheme ListenToWikipedia -destination 'platform=iOS Simulator,name=iPhone 16' build
+xcodebuild -scheme ListenToWikipedia -destination 'platform=iOS Simulator,name=iPhone Air' build
 
 # Test
-xcodebuild -scheme ListenToWikipedia -destination 'platform=iOS Simulator,name=iPhone 16' test
+xcodebuild -scheme ListenToWikipedia -destination 'platform=iOS Simulator,name=iPhone Air' test
 
 # Format (swift-format, config in .swift-format)
 swift-format format --in-place --recursive ListenToWikipedia/
 ```
 
 Single scheme `ListenToWikipedia` covers the app and both test targets.
+
+## Tooling
+
+- **`swift-format`**: Installed via Homebrew. Config in `.swift-format`.
+- **`gh` CLI**: Authenticated, available at `/opt/homebrew/bin/gh`. Used for PR creation.
 
 ## Directory Layout
 
@@ -107,7 +112,7 @@ The codebase compiles for iOS, macOS, visionOS, and tvOS from a single target us
 #endif
 
 #if os(tvOS)
-// tvOS has limited UI — no settings screen
+// tvOS has limited UI (no Stepper, simplified navigation)
 #endif
 ```
 
