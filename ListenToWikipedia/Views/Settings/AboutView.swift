@@ -43,7 +43,7 @@ struct AboutView: View {
         .font(.body)
 
         Text(
-          "Tap a bubble to see the article title, then tap the toast to open the article."
+          "Tap a bubble to see the article title, then tap the title to open the article."
         )
         .font(.body)
       }
