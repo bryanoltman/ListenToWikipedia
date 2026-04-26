@@ -32,6 +32,12 @@ struct AboutView: View {
         }
 
         Text(
+          "When a new user registers on Wikipedia, a blue banner appears at the top of the screen. "
+            + "Tap the banner to visit their talk page and say hello."
+        )
+        .font(.body)
+
+        Text(
           "Larger bubbles represent larger edits. Light bubbles are additions; dark bubbles are removals."
         )
         .font(.body)
