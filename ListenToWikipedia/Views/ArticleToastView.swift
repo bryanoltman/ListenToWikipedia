@@ -16,7 +16,7 @@ struct ArticleToastView: View {
           .lineLimit(2)
         if articleURL != nil {
           Image(systemName: "arrow.up.right")
-            .font(.caption.bold())
+            .font(.subheadline.bold())
             .foregroundColor(.white.opacity(0.7))
         }
       }
