@@ -91,6 +91,7 @@ WikipediaWebSocketService (WebSocket → Combine publisher)
 - Documentation comments use `///` (triple-slash), not `/** */`.
 - Logging goes through `Log.audio` or `Log.network` — do not use `print()`.
 - Settings are read from `AppSettings.shared` — do not create parallel storage.
+- Use `Task.sleep(for:)` (Duration-based), not `Task.sleep(nanoseconds:)`.
 
 ### Concurrency
 
