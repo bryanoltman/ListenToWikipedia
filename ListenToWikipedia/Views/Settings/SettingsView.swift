@@ -8,10 +8,8 @@ struct SettingsView: View {
   var body: some View {
     #if os(macOS)
       macOSBody
-    #elseif os(iOS)
-      iOSBody
-    #elseif os(tvOS)
-      tvOSBody
+    #else
+      formBody
     #endif
   }
 
@@ -60,76 +58,40 @@ struct SettingsView: View {
     }
   #endif
 
-  #if os(iOS)
-    private var iOSBody: some View {
-      NavigationStack {
-        Form {
-          NavigationLink("Languages") { LanguagesToggleView() }
-          NavigationLink("Audio") { AudioSettingsView() }
-          NavigationLink("About") { AboutView() }
-          Toggle("Mute", isOn: $settings.isMuted)
+  private var formBody: some View {
+    NavigationStack {
+      Form {
+        NavigationLink("Languages") { LanguagesToggleView() }
+        NavigationLink("Audio") { AudioSettingsView() }
+        NavigationLink("About") { AboutView() }
+        Toggle("Mute", isOn: $settings.isMuted)
 
-          Section {
-            Button("Reset to Defaults", role: .destructive) {
-              isShowingResetConfirmation = true
-            }
-            .confirmationDialog(
-              "Reset all settings to their defaults?",
-              isPresented: $isShowingResetConfirmation,
-              titleVisibility: .visible
-            ) {
-              Button("Reset", role: .destructive) {
-                settings.resetToDefaults()
-              }
+        Section {
+          Button("Reset to Defaults", role: .destructive) {
+            isShowingResetConfirmation = true
+          }
+          .confirmationDialog(
+            "Reset all settings to their defaults?",
+            isPresented: $isShowingResetConfirmation,
+            titleVisibility: .visible
+          ) {
+            Button("Reset", role: .destructive) {
+              settings.resetToDefaults()
             }
           }
-
         }
-        .navigationTitle("Settings")
+      }
+      .navigationTitle("Settings")
+      #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-          ToolbarItem(placement: .confirmationAction) {
-            Button("Done") { dismiss() }
-          }
+      #endif
+      .toolbar {
+        ToolbarItem(placement: .confirmationAction) {
+          Button("Done") { dismiss() }
         }
       }
     }
-  #endif
-
-  #if os(tvOS)
-    private var tvOSBody: some View {
-      NavigationStack {
-        Form {
-          NavigationLink("Languages") { LanguagesToggleView() }
-          NavigationLink("Audio") { AudioSettingsView() }
-          NavigationLink("About") { AboutView() }
-          Toggle("Mute", isOn: $settings.isMuted)
-
-          Section {
-            Button("Reset to Defaults", role: .destructive) {
-              isShowingResetConfirmation = true
-            }
-            .confirmationDialog(
-              "Reset all settings to their defaults?",
-              isPresented: $isShowingResetConfirmation,
-              titleVisibility: .visible
-            ) {
-              Button("Reset", role: .destructive) {
-                settings.resetToDefaults()
-              }
-            }
-          }
-
-        }
-        .navigationTitle("Settings")
-        .toolbar {
-          ToolbarItem(placement: .confirmationAction) {
-            Button("Done") { dismiss() }
-          }
-        }
-      }
-    }
-  #endif
+  }
 }
 
 #Preview {

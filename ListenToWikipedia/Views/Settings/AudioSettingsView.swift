@@ -47,43 +47,7 @@ struct AudioSettingsView: View {
         }
 
         Section("Scale") {
-          Picker("Key", selection: $settings.musicalKey) {
-            ForEach(MusicalKey.allCases) { key in
-              Text(key.rawValue).tag(key)
-            }
-          }
-
-          Picker("Scale type", selection: $settings.scaleType) {
-            ForEach(ScaleType.allCases) { scaleType in
-              Text(scaleType.description).tag(scaleType)
-            }
-          }
-
-          if settings.scaleType == .pentatonic {
-            Picker("Mode", selection: $settings.pentatonicMode) {
-              ForEach(PentatonicMode.allCases) { mode in
-                Text(mode.rawValue).tag(mode)
-              }
-            }
-          } else {
-            Picker("Mode", selection: $settings.heptatonicMode) {
-              ForEach(HeptatonicMode.allCases) { mode in
-                Text(mode.rawValue).tag(mode)
-              }
-            }
-          }
-
-          Stepper(
-            "Root octave: \(settings.rootOctave)",
-            value: $settings.rootOctave,
-            in: 0...8
-          )
-
-          Stepper(
-            "Octave range: \(settings.octaveRange)",
-            value: $settings.octaveRange,
-            in: 1...4
-          )
+          scaleControls
         }
       }
       .navigationTitle("Audio")
@@ -124,43 +88,7 @@ struct AudioSettingsView: View {
 
         GroupBox("Scale") {
           Form {
-            Picker("Key", selection: $settings.musicalKey) {
-              ForEach(MusicalKey.allCases) { key in
-                Text(key.rawValue).tag(key)
-              }
-            }
-
-            Picker("Scale type", selection: $settings.scaleType) {
-              ForEach(ScaleType.allCases) { scaleType in
-                Text(scaleType.description).tag(scaleType)
-              }
-            }
-
-            if settings.scaleType == .pentatonic {
-              Picker("Mode", selection: $settings.pentatonicMode) {
-                ForEach(PentatonicMode.allCases) { mode in
-                  Text(mode.rawValue).tag(mode)
-                }
-              }
-            } else {
-              Picker("Mode", selection: $settings.heptatonicMode) {
-                ForEach(HeptatonicMode.allCases) { mode in
-                  Text(mode.rawValue).tag(mode)
-                }
-              }
-            }
-
-            Stepper(
-              "Root octave: \(settings.rootOctave)",
-              value: $settings.rootOctave,
-              in: 0...8
-            )
-
-            Stepper(
-              "Octave range: \(settings.octaveRange)",
-              value: $settings.octaveRange,
-              in: 1...4
-            )
+            scaleControls
           }
           .padding(.vertical, 4)
         }
@@ -195,34 +123,53 @@ struct AudioSettingsView: View {
       }
 
       Section("Scale") {
-        Picker("Key", selection: $settings.musicalKey) {
-          ForEach(MusicalKey.allCases) { key in
-            Text(key.rawValue).tag(key)
-          }
-        }
-
-        Picker("Scale type", selection: $settings.scaleType) {
-          ForEach(ScaleType.allCases) { scaleType in
-            Text(scaleType.description).tag(scaleType)
-          }
-        }
-
-        if settings.scaleType == .pentatonic {
-          Picker("Mode", selection: $settings.pentatonicMode) {
-            ForEach(PentatonicMode.allCases) { mode in
-              Text(mode.rawValue).tag(mode)
-            }
-          }
-        } else {
-          Picker("Mode", selection: $settings.heptatonicMode) {
-            ForEach(HeptatonicMode.allCases) { mode in
-              Text(mode.rawValue).tag(mode)
-            }
-          }
-        }
+        scaleControls
       }
     }
     .navigationTitle("Audio")
+  }
+
+  @ViewBuilder
+  private var scaleControls: some View {
+    Picker("Key", selection: $settings.musicalKey) {
+      ForEach(MusicalKey.allCases) { key in
+        Text(key.rawValue).tag(key)
+      }
+    }
+
+    Picker("Scale type", selection: $settings.scaleType) {
+      ForEach(ScaleType.allCases) { scaleType in
+        Text(scaleType.description).tag(scaleType)
+      }
+    }
+
+    if settings.scaleType == .pentatonic {
+      Picker("Mode", selection: $settings.pentatonicMode) {
+        ForEach(PentatonicMode.allCases) { mode in
+          Text(mode.rawValue).tag(mode)
+        }
+      }
+    } else {
+      Picker("Mode", selection: $settings.heptatonicMode) {
+        ForEach(HeptatonicMode.allCases) { mode in
+          Text(mode.rawValue).tag(mode)
+        }
+      }
+    }
+
+    #if !os(tvOS)
+      Stepper(
+        "Root octave: \(settings.rootOctave)",
+        value: $settings.rootOctave,
+        in: 0...8
+      )
+
+      Stepper(
+        "Octave range: \(settings.octaveRange)",
+        value: $settings.octaveRange,
+        in: 1...4
+      )
+    #endif
   }
 
   /// Display name of the currently selected instrument for `type`.
