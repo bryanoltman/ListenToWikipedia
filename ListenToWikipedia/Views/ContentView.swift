@@ -27,34 +27,7 @@ struct ContentView: View {
         .ignoresSafeArea()
     )
     .overlay(alignment: .topLeading) {
-      if #available(iOS 26.0, macOS 26.0, tvOS 26.0, *) {
-        Button(action: openSettingsAction) {
-          Image(systemName: "gearshape.fill")
-            .font(.title2)
-            .foregroundColor(.white)
-            #if os(iOS)
-              .padding(4)
-            #else
-              .padding(8)
-            #endif
-        }
-        .buttonBorderShape(.circle)
-        .buttonStyle(.glass)
-        .padding([.leading])
-        .accessibilityLabel("Settings")
-      } else {
-        Button(action: openSettingsAction) {
-          Image(systemName: "gearshape.fill")
-            .font(.title2)
-            .foregroundColor(.white)
-            .padding()
-            .background(Circle().fill(Color.black.opacity(0.5)))
-        }
-        .buttonBorderShape(.circle)
-        .buttonStyle(.plain)
-        .padding([.leading])
-        .accessibilityLabel("Settings")
-      }
+      settingsButton
     }
     .overlay(alignment: .bottom) {
       if let bubble = tappedBubble {
@@ -97,14 +70,8 @@ struct ContentView: View {
         emptyStateView
       }
     }
-    .animation(
-      .spring(response: 0.3, dampingFraction: 0.7),
-      value: newUser?.username
-    )
-    .animation(
-      .spring(response: 0.3, dampingFraction: 0.7),
-      value: tappedBubble?.id
-    )
+    .animation(Self.defaultSpring, value: newUser?.username)
+    .animation(Self.defaultSpring, value: tappedBubble?.id)
     .sheet(isPresented: $isShowingSettings) {
       SettingsView()
     }
@@ -139,6 +106,40 @@ struct ContentView: View {
           notePlayer.play(note: note, type: .newUser)
         }
       }
+    }
+  }
+
+  private static let defaultSpring = Animation.spring(response: 0.3, dampingFraction: 0.7)
+
+  @ViewBuilder
+  private var settingsButton: some View {
+    if #available(iOS 26.0, macOS 26.0, tvOS 26.0, *) {
+      Button(action: openSettingsAction) {
+        Image(systemName: "gearshape.fill")
+          .font(.title2)
+          .foregroundColor(.white)
+          #if os(iOS)
+            .padding(4)
+          #else
+            .padding(8)
+          #endif
+      }
+      .buttonBorderShape(.circle)
+      .buttonStyle(.glass)
+      .padding([.leading])
+      .accessibilityLabel("Settings")
+    } else {
+      Button(action: openSettingsAction) {
+        Image(systemName: "gearshape.fill")
+          .font(.title2)
+          .foregroundColor(.white)
+          .padding()
+          .background(Circle().fill(Color.black.opacity(0.5)))
+      }
+      .buttonBorderShape(.circle)
+      .buttonStyle(.plain)
+      .padding([.leading])
+      .accessibilityLabel("Settings")
     }
   }
 
