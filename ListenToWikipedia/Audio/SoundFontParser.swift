@@ -1,4 +1,5 @@
 import Foundation
+import os
 
 /// Parses the preset headers from a SoundFont 2 (.sf2) file.
 /// https://en.wikipedia.org/wiki/SoundFont
@@ -37,6 +38,7 @@ enum SoundFontParser {
   /// Returns all instruments found in the given SF2 file, sorted by name.
   private static func instruments(at url: URL) -> [SoundFontInstrument] {
     guard let data = try? Data(contentsOf: url, options: .mappedIfSafe) else {
+      Log.audio.error("Failed to read SoundFont data at \(url.path)")
       return []
     }
 
