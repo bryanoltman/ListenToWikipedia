@@ -38,8 +38,7 @@ final class WikipediaWebSocketService: ObservableObject {
   private var socketTasks: [String: URLSessionWebSocketTask] = [:]
   private let eventSubject = PassthroughSubject<WikipediaEvent, Never>()
 
-  private var reconnectTasks: [String: Task<Void, Never>] = [:]
-  private var reconnectDelays: [String: TimeInterval] = [:]
+  private var reconnectState: [String: ReconnectState] = [:]
 
   private static let initialDelay: TimeInterval = 1.0
   private static let maxDelay: TimeInterval = 30.0
@@ -49,8 +48,8 @@ final class WikipediaWebSocketService: ObservableObject {
   func connect(language: String) {
     guard socketTasks[language] == nil else { return }
     // Cancel any pending reconnect for this language.
-    reconnectTasks[language]?.cancel()
-    reconnectTasks.removeValue(forKey: language)
+    reconnectState[language]?.task?.cancel()
+    reconnectState.removeValue(forKey: language)
     performConnect(language: language)
   }
 
@@ -71,9 +70,8 @@ final class WikipediaWebSocketService: ObservableObject {
   /// Closes the WebSocket connection for the given language code.
   func disconnect(language: String) {
     Log.network.info("Disconnecting from \(language)")
-    reconnectTasks[language]?.cancel()
-    reconnectTasks.removeValue(forKey: language)
-    reconnectDelays.removeValue(forKey: language)
+    reconnectState[language]?.task?.cancel()
+    reconnectState.removeValue(forKey: language)
     socketTasks[language]?.cancel(with: .goingAway, reason: nil)
     socketTasks.removeValue(forKey: language)
     connectedLanguages.remove(language)
@@ -82,9 +80,8 @@ final class WikipediaWebSocketService: ObservableObject {
   /// Closes all open WebSocket connections.
   func disconnectAll() {
     Log.network.info("Disconnecting all (\(self.connectedLanguages.count) connections)")
-    for task in reconnectTasks.values { task.cancel() }
-    reconnectTasks.removeAll()
-    reconnectDelays.removeAll()
+    for state in reconnectState.values { state.task?.cancel() }
+    reconnectState.removeAll()
     for language in Array(socketTasks.keys) {
       disconnect(language: language)
     }
@@ -106,7 +103,7 @@ final class WikipediaWebSocketService: ObservableObject {
             self.eventSubject.send(event)
           }
           // Reset reconnect delay on successful receive.
-          self.reconnectDelays[language] = Self.initialDelay
+          self.reconnectState[language]?.delay = Self.initialDelay
           // Recursively schedule the next receive.
           self.scheduleNextReceive(language: language, task: task)
 
@@ -123,10 +120,10 @@ final class WikipediaWebSocketService: ObservableObject {
 
           // Unexpected failure — schedule reconnect with exponential backoff.
           Log.network.error("Connection error for \(language): \(error)")
-          let currentDelay = self.reconnectDelays[language] ?? Self.initialDelay
+          let currentDelay = self.reconnectState[language]?.delay ?? Self.initialDelay
           let attempt = Int(log2(currentDelay / Self.initialDelay)) + 1
-          self.reconnectTasks[language]?.cancel()
-          self.reconnectTasks[language] = Task { [weak self] in
+          self.reconnectState[language]?.task?.cancel()
+          let reconnectTask = Task { [weak self] in
             do {
               try await Task.sleep(for: .seconds(currentDelay))
             } catch {
@@ -134,9 +131,10 @@ final class WikipediaWebSocketService: ObservableObject {
             }
             guard let self else { return }
             Log.network.info("Reconnecting to \(language) (attempt \(attempt), delay \(currentDelay)s)")
-            self.reconnectDelays[language] = min(currentDelay * 2, Self.maxDelay)
             self.performConnect(language: language)
           }
+          self.reconnectState[language] = ReconnectState(
+            task: reconnectTask, delay: min(currentDelay * 2, Self.maxDelay))
         }
       }
     }
@@ -162,5 +160,10 @@ final class WikipediaWebSocketService: ObservableObject {
     }
 
     return WikipediaEvent.fromJsonString(jsonString, language: language)
+  }
+
+  private struct ReconnectState {
+    var task: Task<Void, Never>?
+    var delay: TimeInterval
   }
 }
