@@ -142,7 +142,7 @@ import os
     sampler.startNote(note, withVelocity: velocity, onChannel: 0)
 
     activeNotes[key] = Task { [weak self] in
-      try? await Task.sleep(nanoseconds: 5_000_000_000)
+      try? await Task.sleep(for: .seconds(5))
       guard !Task.isCancelled else { return }
       sampler.stopNote(note, onChannel: 0)
       self?.activeNotes.removeValue(forKey: key)
