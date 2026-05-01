@@ -152,7 +152,10 @@ final class WikipediaWebSocketService: ObservableObject {
     case .string(let s):
       jsonString = s
     case .data(let d):
-      guard let s = String(data: d, encoding: .utf8) else { return nil }
+      guard let s = String(data: d, encoding: .utf8) else {
+        Log.network.error("Failed to decode WebSocket data as UTF-8 (\(d.count) bytes, language: \(language))")
+        return nil
+      }
       jsonString = s
     @unknown default:
       return nil
