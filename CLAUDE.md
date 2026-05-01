@@ -9,43 +9,45 @@ ListenToWikipedia is a native Apple platform app that visualizes real-time Wikip
 - **Language:** Swift, SwiftUI, Combine, AVFoundation
 - **Platforms:** iOS 17.6+, macOS 15.7+, visionOS 26.2, tvOS
 - **Dependencies:** None. Pure Apple SDK — no third-party packages.
-- **Build system:** Xcode project (`ListenToWikipedia.xcodeproj`). No SPM `Package.swift`.
+- **Build system:** Xcode project (`apple/ListenToWikipedia.xcodeproj`). No SPM `Package.swift`.
 - **License:** BSD 3-Clause
 
 ## Build / Test / Format
 
 ```bash
 # Build (iOS Simulator)
-xcodebuild -scheme ListenToWikipedia -destination 'platform=iOS Simulator,name=iPhone Air' build
+xcodebuild -project apple/ListenToWikipedia.xcodeproj -scheme ListenToWikipedia -destination 'platform=iOS Simulator,name=iPhone Air' build
 
 # Test
-xcodebuild -scheme ListenToWikipedia -destination 'platform=iOS Simulator,name=iPhone Air' test
+xcodebuild -project apple/ListenToWikipedia.xcodeproj -scheme ListenToWikipedia -destination 'platform=iOS Simulator,name=iPhone Air' test
 
-# Format (swift-format, config in .swift-format)
-swift-format format --in-place --recursive ListenToWikipedia/
+# Format (swift-format, config in apple/.swift-format)
+swift-format format --in-place --recursive apple/ListenToWikipedia/
 ```
 
 Single scheme `ListenToWikipedia` covers the app and both test targets.
 
 ## Tooling
 
-- **`swift-format`**: Installed via Homebrew. Config in `.swift-format`.
+- **`swift-format`**: Installed via Homebrew. Config in `apple/.swift-format`.
 - **`gh` CLI**: Authenticated, available at `/opt/homebrew/bin/gh`. Used for PR creation.
 
 ## Directory Layout
 
 ```
-ListenToWikipedia/              # Main app target
-  App/                          # Entry point (ListenToWikipediaApp), logging (Log)
-  Audio/                        # NotePlayer, MusicalScale, SoundFont parsing, types
-  Models/                       # AppSettings, WikipediaLanguage
-  Networking/                   # WikipediaWebSocketService, event models
-  Views/                        # ContentView, BubblesView, toasts, banners
-    Settings/                   # SettingsView and subviews
-  GeneralUser-GS.sf2            # Bundled SoundFont asset
-ListenToWikipediaTests/         # Unit tests (Swift Testing framework)
-ListenToWikipediaUITests/       # UI tests (XCTest)
-AppIconAssets/                  # SVG app icons
+apple/                            # Apple platform app (iOS, macOS, tvOS, visionOS)
+  ListenToWikipedia/              # Main app target
+    App/                          # Entry point (ListenToWikipediaApp), logging (Log)
+    Audio/                        # NotePlayer, MusicalScale, SoundFont parsing, types
+    Models/                       # AppSettings, WikipediaLanguage
+    Networking/                   # WikipediaWebSocketService, event models
+    Views/                        # ContentView, BubblesView, toasts, banners
+      Settings/                   # SettingsView and subviews
+    GeneralUser-GS.sf2            # Bundled SoundFont asset
+  ListenToWikipediaTests/         # Unit tests (Swift Testing framework)
+  ListenToWikipediaUITests/       # UI tests (XCTest)
+  AppIconAssets/                  # SVG app icons
+  Screenshots/                    # App screenshots
 ```
 
 ## Architecture
@@ -121,6 +123,6 @@ When adding platform-specific behavior, use these guards and keep shared logic u
 
 ## Testing
 
-- **Unit tests:** Swift Testing framework (`import Testing`, `@Test` macro). Located in `ListenToWikipediaTests/`.
-- **UI tests:** XCTest. Located in `ListenToWikipediaUITests/`.
+- **Unit tests:** Swift Testing framework (`import Testing`, `@Test` macro). Located in `apple/ListenToWikipediaTests/`.
+- **UI tests:** XCTest. Located in `apple/ListenToWikipediaUITests/`.
 - Both test targets are currently placeholder stubs — add real tests when modifying behavior.

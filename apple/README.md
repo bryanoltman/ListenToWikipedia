@@ -44,7 +44,7 @@ The app is built entirely in SwiftUI with no external packages.
 
 ## License
 
-BSD 3-Clause. See [LICENSE](LICENSE) for details.
+BSD 3-Clause. See [LICENSE](../LICENSE) for details.
 
 ### Third-Party Assets
 
