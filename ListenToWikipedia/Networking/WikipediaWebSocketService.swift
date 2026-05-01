@@ -162,8 +162,15 @@ final class WikipediaWebSocketService: ObservableObject {
     return WikipediaEvent.fromJsonString(jsonString, language: language)
   }
 
+  /// Per-language reconnection bookkeeping, bundling the in-flight
+  /// reconnect task with its current backoff delay so the two cannot
+  /// drift out of sync.
   private struct ReconnectState {
+    /// The pending reconnect task, if one is scheduled. Cancelled on
+    /// explicit connect/disconnect or when a new reconnect supersedes it.
     var task: Task<Void, Never>?
+    /// Current exponential-backoff delay, reset to ``WikipediaWebSocketService/initialDelay``
+    /// on a successful receive and doubled (up to ``WikipediaWebSocketService/maxDelay``) on each failure.
     var delay: TimeInterval
   }
 }
