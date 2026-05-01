@@ -154,7 +154,7 @@ struct ContentView: View {
     tappedBubble = bubble
     tapClearTask?.cancel()
     tapClearTask = Task {
-      try? await Task.sleep(nanoseconds: 3_000_000_000)
+      try? await Task.sleep(for: .seconds(3))
       guard !Task.isCancelled else { return }
       tappedBubble = nil
     }
