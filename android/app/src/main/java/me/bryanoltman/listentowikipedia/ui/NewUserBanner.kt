@@ -20,15 +20,14 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
-
-private val NewUserBannerColor = Color(0xFF6495ED) // Cornflower blue
+import me.bryanoltman.listentowikipedia.ui.theme.NewUserBanner
 
 @Composable
 fun NewUserBanner(username: String, onTap: () -> Unit) {
     Surface(
         onClick = onTap,
         shape = RoundedCornerShape(20.dp),
-        color = NewUserBannerColor,
+        color = NewUserBanner,
         modifier = Modifier
             .shadow(
                 elevation = 5.dp,
