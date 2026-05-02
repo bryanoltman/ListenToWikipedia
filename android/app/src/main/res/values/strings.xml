@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">ListenToWikipedia</string>
+    <string name="empty"></string>
+    <string name="attribution_label">Audio and network operations</string>
 </resources>
