@@ -18,6 +18,7 @@ import okhttp3.Request
 import okhttp3.Response
 import okhttp3.WebSocket
 import okhttp3.WebSocketListener
+import kotlin.math.ln
 
 class WikipediaWebSocketService {
 
@@ -46,7 +47,7 @@ class WikipediaWebSocketService {
         reconnectJobs.remove(language)?.cancel()
         reconnectDelays.remove(language)
         sockets.remove(language)?.close(NORMAL_CLOSURE, null)
-        _connectedLanguages.value = _connectedLanguages.value - language
+        _connectedLanguages.value -= language
     }
 
     fun disconnectAll() {
@@ -79,14 +80,14 @@ class WikipediaWebSocketService {
             override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
                 Log.e(TAG, "Connection error for $language: ${t.message}")
                 sockets.remove(language)
-                _connectedLanguages.value = _connectedLanguages.value - language
+                _connectedLanguages.value -= language
                 scheduleReconnect(language)
             }
 
             override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
                 Log.i(TAG, "Connection closed for $language (code=$code)")
                 sockets.remove(language)
-                _connectedLanguages.value = _connectedLanguages.value - language
+                _connectedLanguages.value -= language
                 // Do not reconnect on normal closure (code 1000).
                 if (code != NORMAL_CLOSURE) {
                     scheduleReconnect(language)
@@ -96,13 +97,13 @@ class WikipediaWebSocketService {
 
         val socket = client.newWebSocket(request, listener)
         sockets[language] = socket
-        _connectedLanguages.value = _connectedLanguages.value + language
+        _connectedLanguages.value += language
     }
 
     private fun scheduleReconnect(language: String) {
         reconnectJobs.remove(language)?.cancel()
         val currentDelay = reconnectDelays[language] ?: INITIAL_DELAY_MS
-        val attempt = (Math.log(currentDelay.toDouble() / INITIAL_DELAY_MS) / Math.log(2.0)).toInt() + 1
+        val attempt = (ln(currentDelay.toDouble() / INITIAL_DELAY_MS) / ln(2.0)).toInt() + 1
 
         reconnectJobs[language] = scope.launch {
             delay(currentDelay)

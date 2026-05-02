@@ -55,7 +55,7 @@ object BubblePhysics {
     const val LIFESPAN: Double = 9.0
     private const val ENTRANCE_DURATION: Double = 0.3
     private const val FADE_DURATION: Double = 3.0
-    private val FADE_START: Double = LIFESPAN - FADE_DURATION
+    private const val FADE_START: Double = LIFESPAN - FADE_DURATION
 
     const val RIPPLE_COUNT: Int = 2
     private const val RIPPLE_DELAY: Double = 0.3
@@ -91,7 +91,7 @@ object BubblePhysics {
     ): Triple<Double, Double, Double>? {
         val ringStart = index.toDouble() * RIPPLE_DELAY
         val ringAge = age - ringStart
-        if (ringAge < 0 || ringAge > RIPPLE_DURATION) return null
+        if (ringAge !in 0.0..RIPPLE_DURATION) return null
 
         val t = ringAge / RIPPLE_DURATION
         // Ease-out quadratic
@@ -120,14 +120,14 @@ object BubblePhysics {
 
     /** Scale pop: quick swell and settle using a sine curve. */
     fun tapScale(tapAge: Double): Double {
-        if (tapAge < 0 || tapAge >= TAP_ANIMATION_DURATION) return 1.0
+        if (tapAge !in 0.0..<TAP_ANIMATION_DURATION) return 1.0
         val t = tapAge / TAP_ANIMATION_DURATION
         return 1.0 + 0.1 * sin(t * PI)
     }
 
     /** White flash overlay opacity that fades out quickly. */
     fun tapFlashOpacity(tapAge: Double): Double {
-        if (tapAge < 0 || tapAge >= TAP_ANIMATION_DURATION) return 0.0
+        if (tapAge !in 0.0..<TAP_ANIMATION_DURATION) return 0.0
         val t = tapAge / TAP_ANIMATION_DURATION
         return 0.05 * (1.0 - t * t)
     }
@@ -137,7 +137,7 @@ object BubblePhysics {
         tapAge: Double,
         baseRadius: Double
     ): Triple<Double, Double, Double>? {
-        if (tapAge < 0 || tapAge >= TAP_RIPPLE_DURATION) return null
+        if (tapAge !in 0.0..<TAP_RIPPLE_DURATION) return null
         val t = tapAge / TAP_RIPPLE_DURATION
         val easedT = 1.0 - (1.0 - t) * (1.0 - t)
         val radius = baseRadius + easedT * baseRadius * 0.5
@@ -235,7 +235,7 @@ class BubbleManager {
             Triple(DotWhite, Color.White, ShadowBlack85)
     }
 
-    private fun articleUrl(language: String, pageTitle: String): String? {
+    private fun articleUrl(language: String, pageTitle: String): String {
         val encodedTitle = URLEncoder.encode(
             pageTitle.replace(" ", "_"),
             "UTF-8"
