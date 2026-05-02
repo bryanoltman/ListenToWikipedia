@@ -40,7 +40,7 @@ import kotlin.math.sqrt
 
 data class Bubble(
     val id: String = UUID.randomUUID().toString(),
-    val creationTime: Long, // SystemClock.elapsedRealtime()
+    val creationTime: Long,
     val normalizedX: Float,
     val normalizedY: Float,
     val color: Color,
