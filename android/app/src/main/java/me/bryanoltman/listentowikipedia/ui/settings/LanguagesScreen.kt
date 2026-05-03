@@ -45,7 +45,6 @@ fun LanguagesScreen(settings: AppSettings, onBack: () -> Unit) {
                 val isSelected = language.code in selectedCodes
                 ListItem(
                     headlineContent = { Text(language.name) },
-                    supportingContent = { Text(language.code) },
                     trailingContent = {
                         Switch(
                             checked = isSelected,
