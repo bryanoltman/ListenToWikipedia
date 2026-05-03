@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import me.bryanoltman.listentowikipedia.audio.EditSoundType
 import me.bryanoltman.listentowikipedia.audio.HeptatonicMode
+import me.bryanoltman.listentowikipedia.audio.InstrumentId
 import me.bryanoltman.listentowikipedia.audio.MusicalKey
 import me.bryanoltman.listentowikipedia.audio.MusicalScale
 import me.bryanoltman.listentowikipedia.audio.PentatonicMode
@@ -50,7 +51,7 @@ class AppSettings private constructor(context: Context) {
     val isMuted: MutableStateFlow<Boolean> =
         MutableStateFlow(prefs.getBoolean(KEY_IS_MUTED, DEFAULT_IS_MUTED))
 
-    val instrumentPrograms: MutableStateFlow<Map<EditSoundType, Int>> =
+    val instrumentPrograms: MutableStateFlow<Map<EditSoundType, InstrumentId>> =
         MutableStateFlow(loadInstrumentPrograms())
 
     val rootOctave: MutableStateFlow<Int> =
@@ -91,7 +92,7 @@ class AppSettings private constructor(context: Context) {
         prefs.edit().putBoolean(KEY_IS_MUTED, value).apply()
     }
 
-    fun setInstrumentPrograms(value: Map<EditSoundType, Int>) {
+    fun setInstrumentPrograms(value: Map<EditSoundType, InstrumentId>) {
         instrumentPrograms.value = value
         prefs.edit().putString(KEY_INSTRUMENT_PROGRAMS, serializeInstrumentPrograms(value)).apply()
     }
@@ -133,13 +134,30 @@ class AppSettings private constructor(context: Context) {
 
     // --- Serialization helpers ---
 
-    private fun loadInstrumentPrograms(): Map<EditSoundType, Int> {
+    /**
+     * Deserializes stored instrument programs. Handles both the new format
+     * `{"TYPE": {"bank": 0, "program": 8}}` and the legacy format
+     * `{"TYPE": 8}` (treated as bank 0).
+     */
+    private fun loadInstrumentPrograms(): Map<EditSoundType, InstrumentId> {
         val json = prefs.getString(KEY_INSTRUMENT_PROGRAMS, null) ?: return DEFAULT_INSTRUMENT_PROGRAMS
         return try {
             val obj = JSONObject(json)
-            val result = mutableMapOf<EditSoundType, Int>()
+            val result = mutableMapOf<EditSoundType, InstrumentId>()
             for (type in EditSoundType.entries) {
-                result[type] = if (obj.has(type.name)) obj.getInt(type.name) else type.defaultProgram
+                if (!obj.has(type.name)) {
+                    result[type] = type.defaultInstrumentId
+                    continue
+                }
+                val value = obj.get(type.name)
+                result[type] = when (value) {
+                    is JSONObject -> InstrumentId(
+                        bank = value.getInt("bank"),
+                        program = value.getInt("program"),
+                    )
+                    is Number -> InstrumentId(bank = 0, program = value.toInt())
+                    else -> type.defaultInstrumentId
+                }
             }
             result
         } catch (_: Exception) {
@@ -147,10 +165,13 @@ class AppSettings private constructor(context: Context) {
         }
     }
 
-    private fun serializeInstrumentPrograms(programs: Map<EditSoundType, Int>): String {
+    private fun serializeInstrumentPrograms(programs: Map<EditSoundType, InstrumentId>): String {
         val obj = JSONObject()
-        for ((type, program) in programs) {
-            obj.put(type.name, program)
+        for ((type, id) in programs) {
+            val inner = JSONObject()
+            inner.put("bank", id.bank)
+            inner.put("program", id.program)
+            obj.put(type.name, inner)
         }
         return obj.toString()
     }
@@ -175,9 +196,9 @@ class AppSettings private constructor(context: Context) {
         private val DEFAULT_PENTATONIC_MODE = PentatonicMode.MAJOR_PENTATONIC
         private const val DEFAULT_IS_MUTED = false
         private val DEFAULT_INSTRUMENT_PROGRAMS = mapOf(
-            EditSoundType.ADDITION to 8,
-            EditSoundType.SUBTRACTION to 7,
-            EditSoundType.NEW_USER to 89
+            EditSoundType.ADDITION to EditSoundType.ADDITION.defaultInstrumentId,
+            EditSoundType.SUBTRACTION to EditSoundType.SUBTRACTION.defaultInstrumentId,
+            EditSoundType.NEW_USER to EditSoundType.NEW_USER.defaultInstrumentId,
         )
         private const val DEFAULT_ROOT_OCTAVE = 1
         private const val DEFAULT_OCTAVE_RANGE = 3

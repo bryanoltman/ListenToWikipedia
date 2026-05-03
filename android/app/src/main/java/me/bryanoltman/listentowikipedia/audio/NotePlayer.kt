@@ -1,86 +1,152 @@
 package me.bryanoltman.listentowikipedia.audio
 
+import android.content.Context
 import android.media.AudioAttributes
 import android.media.AudioFormat
 import android.media.AudioManager
 import android.media.AudioTrack
 import android.util.Log
+import io.github.lemcoder.mikrosoundfont.MikroSoundFont
+import io.github.lemcoder.mikrosoundfont.SoundFont
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.util.concurrent.ConcurrentHashMap
-import kotlin.math.PI
-import kotlin.math.exp
-import kotlin.math.pow
-import kotlin.math.sin
 
 /**
- * Synthesizes and plays musical tones for Wikipedia edit events.
+ * Plays musical notes using the bundled SoundFont file.
  *
- * Uses [AudioTrack] with generated PCM waveforms instead of MIDI, so it works
- * on every Android device without requiring a platform synthesizer.
+ * Loads `GeneralUser-GS.sf2` from assets via [MikroSoundFont] (TinySoundFont)
+ * and renders audio into a streaming [AudioTrack]. Each [EditSoundType] is
+ * assigned a MIDI channel so different event types can play different
+ * instruments simultaneously.
  *
- * Each [EditSoundType] gets a distinct timbre:
- * - Addition (Celesta-like): sine + quiet octave harmonic, fast attack, moderate decay
- * - Subtraction (Clavinet-like): sine + 3rd harmonic, fast attack, short decay
- * - New User (Warm Pad-like): pure sine, slow attack, long decay
- *
- * The coroutine that launches playback is the sole owner of its [AudioTrack].
- * Cancelling the coroutine triggers its `finally` block, which stops and
- * releases the track. No other code path touches the track.
+ * A dedicated render thread continuously calls [SoundFont.renderFloat] and
+ * writes PCM data to the AudioTrack. Note-on/off events mutate the SoundFont
+ * state under a shared lock.
  */
-class NotePlayer {
+class NotePlayer(context: Context) {
+
+    private val soundFont: SoundFont
+    private var audioTrack: AudioTrack? = null
+    private var renderThread: Thread? = null
+    @Volatile private var isRunning = false
 
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
-    private val activeNotes = ConcurrentHashMap<NoteKey, Job>()
+    private val lock = Any()
 
-    /**
-     * Program numbers are unused for tone generation but stored so the settings
-     * UI can still display the selected instrument name.
-     */
-    fun loadProgram(type: EditSoundType, program: Int) {
-        // No-op: tone generation doesn't use GM programs for playback.
-        // The program selection is preserved in AppSettings for UI display.
+    init {
+        val sfBytes = context.assets.open(SF2_ASSET).use { it.readBytes() }
+        soundFont = MikroSoundFont.load(sfBytes)
+        soundFont.setOutput(SoundFont.OutputMode.MONO, SAMPLE_RATE, GLOBAL_GAIN_DB)
+        soundFont.setMaxVoices(MAX_VOICES)
+        startAudioLoop()
     }
 
+    /**
+     * Switches the instrument for the given [EditSoundType] to the SF2 preset
+     * identified by [bank] and [program].
+     */
+    fun loadProgram(type: EditSoundType, bank: Int, program: Int) {
+        synchronized(lock) {
+            soundFont.setBankPreset(type.midiChannel, bank, program)
+        }
+    }
+
+    /**
+     * Plays a MIDI note on the channel for [type], stopping it after [NOTE_DURATION_MS].
+     * If the same note is already sounding on that channel, the SoundFont will
+     * layer a new voice (matching iOS behavior).
+     */
     fun play(note: Int, velocity: Int = 100, type: EditSoundType) {
-        if (activeNotes.size >= MAX_SIMULTANEOUS) return
+        val channel = type.midiChannel
+        synchronized(lock) {
+            soundFont.channels[channel].noteOn(note, velocity / 127f)
+        }
 
-        val key = NoteKey(type, note)
-        activeNotes.remove(key)?.cancel()
-
-        val frequency = 440.0 * 2.0.pow((note - 69) / 12.0)
-        val amplitude = (velocity / 127.0) * MASTER_VOLUME
-
-        activeNotes[key] = scope.launch {
-            val track = buildTrack(frequency, amplitude, type) ?: return@launch
-            track.play()
-            try {
-                delay(TONE_DURATION_MS)
-            } finally {
-                releaseTrack(track)
-                activeNotes.remove(key)
+        scope.launch {
+            delay(NOTE_DURATION_MS)
+            synchronized(lock) {
+                soundFont.channels[channel].noteOff(note)
             }
         }
     }
 
+    /** Stops all active notes immediately. */
     fun stop() {
-        for ((_, job) in activeNotes) {
-            job.cancel()
+        synchronized(lock) {
+            soundFont.noteOffAll()
         }
-        activeNotes.clear()
     }
 
+    /** Stops all notes, tears down the render thread, and releases the AudioTrack. */
     fun release() {
-        stop()
+        isRunning = false
+        renderThread?.join(1000)
         scope.cancel()
+        audioTrack?.let { releaseTrack(it) }
+        audioTrack = null
     }
 
     // -------------------------------------------------------------------
+
+    private fun startAudioLoop() {
+        val minBuf = AudioTrack.getMinBufferSize(
+            SAMPLE_RATE,
+            AudioFormat.CHANNEL_OUT_MONO,
+            AudioFormat.ENCODING_PCM_16BIT,
+        )
+        val track = try {
+            AudioTrack(
+                AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_MEDIA)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .build(),
+                AudioFormat.Builder()
+                    .setSampleRate(SAMPLE_RATE)
+                    .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+                    .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
+                    .build(),
+                minBuf,
+                AudioTrack.MODE_STREAM,
+                AudioManager.AUDIO_SESSION_ID_GENERATE,
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to create AudioTrack", e)
+            return
+        }
+        audioTrack = track
+        track.play()
+
+        isRunning = true
+        renderThread = Thread({
+            android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO)
+            val shortBuf = ShortArray(CHUNK_SAMPLES)
+
+            while (isRunning) {
+                val floatBuf: FloatArray
+                synchronized(lock) {
+                    floatBuf = soundFont.renderFloat(CHUNK_SAMPLES, 1, false)
+                }
+                for (i in floatBuf.indices) {
+                    shortBuf[i] = (floatBuf[i] * Short.MAX_VALUE)
+                        .toInt()
+                        .coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt())
+                        .toShort()
+                }
+                val written = track.write(shortBuf, 0, CHUNK_SAMPLES)
+                if (written < 0) {
+                    Log.e(TAG, "AudioTrack.write error: $written")
+                    break
+                }
+            }
+        }, "SoundFontRenderer").apply {
+            isDaemon = true
+            start()
+        }
+    }
 
     private fun releaseTrack(track: AudioTrack) {
         try {
@@ -91,84 +157,15 @@ class NotePlayer {
         track.release()
     }
 
-    private fun buildTrack(
-        frequency: Double,
-        amplitude: Double,
-        type: EditSoundType
-    ): AudioTrack? {
-        val totalSamples = (SAMPLE_RATE * TONE_DURATION_MS / 1000).toInt()
-        val samples = ShortArray(totalSamples)
-
-        val attackSeconds = when (type) {
-            EditSoundType.ADDITION -> 0.005
-            EditSoundType.SUBTRACTION -> 0.002
-            EditSoundType.NEW_USER -> 0.08
-        }
-        val decayTau = when (type) {
-            EditSoundType.ADDITION -> 1.2
-            EditSoundType.SUBTRACTION -> 0.6
-            EditSoundType.NEW_USER -> 1.6
-        }
-        // Harmonic mix: (harmonicMultiplier, relativeAmplitude)
-        val harmonics: List<Pair<Double, Double>> = when (type) {
-            EditSoundType.ADDITION -> listOf(1.0 to 1.0, 2.0 to 0.15)
-            EditSoundType.SUBTRACTION -> listOf(1.0 to 1.0, 3.0 to 0.10)
-            EditSoundType.NEW_USER -> listOf(1.0 to 1.0)
-        }
-
-        val attackSamples = (attackSeconds * SAMPLE_RATE).toInt().coerceAtLeast(1)
-
-        for (i in 0 until totalSamples) {
-            val t = i.toDouble() / SAMPLE_RATE
-
-            var wave = 0.0
-            for ((mult, amp) in harmonics) {
-                wave += amp * sin(2.0 * PI * frequency * mult * t)
-            }
-
-            val env = if (i < attackSamples) {
-                i.toDouble() / attackSamples
-            } else {
-                exp(-(t - attackSeconds) / decayTau)
-            }
-
-            val value = (wave * amplitude * env * Short.MAX_VALUE)
-                .toInt()
-                .coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt())
-            samples[i] = value.toShort()
-        }
-
-        val bufferSizeBytes = totalSamples * 2 // 16-bit PCM
-        return try {
-            val track = AudioTrack(
-                AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_MEDIA)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                    .build(),
-                AudioFormat.Builder()
-                    .setSampleRate(SAMPLE_RATE)
-                    .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
-                    .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
-                    .build(),
-                bufferSizeBytes,
-                AudioTrack.MODE_STATIC,
-                AudioManager.AUDIO_SESSION_ID_GENERATE
-            )
-            track.write(samples, 0, totalSamples)
-            track
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to create AudioTrack", e)
-            null
-        }
-    }
-
-    private data class NoteKey(val type: EditSoundType, val note: Int)
-
     companion object {
         private const val TAG = "NotePlayer"
-        private const val SAMPLE_RATE = 22050
-        private const val TONE_DURATION_MS = 2000L
-        private const val MAX_SIMULTANEOUS = 10
-        private const val MASTER_VOLUME = 0.25
+        private const val SF2_ASSET = "GeneralUser-GS.sf2"
+        private const val SAMPLE_RATE = 44100
+        private const val GLOBAL_GAIN_DB = -3f
+        private const val NOTE_DURATION_MS = 5000L
+        private const val MAX_VOICES = 64
+
+        /** ~20ms render chunks at 44.1kHz */
+        private const val CHUNK_SAMPLES = SAMPLE_RATE / 50
     }
 }

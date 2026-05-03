@@ -19,9 +19,13 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import me.bryanoltman.listentowikipedia.audio.EditSoundType
-import me.bryanoltman.listentowikipedia.audio.GeneralMidiCatalog
+import me.bryanoltman.listentowikipedia.audio.InstrumentId
+import me.bryanoltman.listentowikipedia.audio.SoundFontParser
 import me.bryanoltman.listentowikipedia.model.AppSettings
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -31,8 +35,10 @@ fun InstrumentPickerScreen(
     settings: AppSettings,
     onBack: () -> Unit,
 ) {
+    val context = LocalContext.current
+    val instrumentsByBank = remember { SoundFontParser.bundledInstrumentsByBank(context) }
     val instrumentPrograms by settings.instrumentPrograms.collectAsState()
-    val selectedProgram = instrumentPrograms[editSoundType] ?: editSoundType.defaultProgram
+    val selectedId = instrumentPrograms[editSoundType] ?: editSoundType.defaultInstrumentId
 
     Scaffold(
         topBar = {
@@ -49,26 +55,42 @@ fun InstrumentPickerScreen(
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(padding),
         ) {
-            items(GeneralMidiCatalog.instruments, key = { it.program }) { instrument ->
-                val isSelected = instrument.program == selectedProgram
-                ListItem(
-                    headlineContent = { Text(instrument.name) },
-                    trailingContent = {
-                        if (isSelected) {
-                            Icon(
-                                Icons.Default.Check,
-                                contentDescription = "Selected",
-                                tint = MaterialTheme.colorScheme.primary,
-                            )
-                        }
-                    },
-                    modifier = Modifier.clickable {
-                        val current = settings.instrumentPrograms.value.toMutableMap()
-                        current[editSoundType] = instrument.program
-                        settings.setInstrumentPrograms(current)
-                    },
-                )
+            instrumentsByBank.forEach { (bank, instruments) ->
+                item(key = "header-$bank") {
+                    Text(
+                        text = bankDisplayName(bank),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(start = 16.dp, top = 24.dp, bottom = 8.dp),
+                    )
+                }
+                items(instruments, key = { "${it.bank}-${it.program}" }) { instrument ->
+                    val isSelected = instrument.id == selectedId
+                    ListItem(
+                        headlineContent = { Text(instrument.name) },
+                        trailingContent = {
+                            if (isSelected) {
+                                Icon(
+                                    Icons.Default.Check,
+                                    contentDescription = "Selected",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                )
+                            }
+                        },
+                        modifier = Modifier.clickable {
+                            val current = settings.instrumentPrograms.value.toMutableMap()
+                            current[editSoundType] = instrument.id
+                            settings.setInstrumentPrograms(current)
+                        },
+                    )
+                }
             }
         }
     }
+}
+
+private fun bankDisplayName(bank: Int): String = when (bank) {
+    0 -> "General MIDI"
+    128 -> "GM Percussion"
+    else -> "Bank $bank"
 }

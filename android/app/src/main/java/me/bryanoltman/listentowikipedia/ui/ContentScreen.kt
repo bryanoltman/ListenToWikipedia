@@ -33,6 +33,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
@@ -56,13 +57,14 @@ import java.net.URLEncoder
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ContentScreen(settings: AppSettings) {
+    val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
     val view = LocalView.current
     val scope = rememberCoroutineScope()
 
     val webSocketService = remember { WikipediaWebSocketService() }
     val bubbleManager = remember { BubbleManager() }
-    val notePlayer = remember { NotePlayer() }
+    val notePlayer = remember { NotePlayer(context) }
 
     var isShowingSettings by remember { mutableStateOf(false) }
     var tappedBubble by remember { mutableStateOf<Bubble?>(null) }
@@ -107,8 +109,8 @@ fun ContentScreen(settings: AppSettings) {
     // Sync instrument programs
     LaunchedEffect(Unit) {
         settings.instrumentPrograms.collect { programs ->
-            for ((type, program) in programs) {
-                notePlayer.loadProgram(type, program)
+            for ((type, id) in programs) {
+                notePlayer.loadProgram(type, id.bank, id.program)
             }
         }
     }
@@ -259,7 +261,7 @@ fun ContentScreen(settings: AppSettings) {
                 modifier = Modifier.align(Alignment.Center)
             ) {
                 Text(
-                    text = "🌐",
+                    text = "\uD83C\uDF10",
                     fontSize = 36.sp
                 )
                 Text(

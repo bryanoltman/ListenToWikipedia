@@ -33,13 +33,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import me.bryanoltman.listentowikipedia.audio.EditSoundType
-import me.bryanoltman.listentowikipedia.audio.GeneralMidiCatalog
 import me.bryanoltman.listentowikipedia.audio.HeptatonicMode
 import me.bryanoltman.listentowikipedia.audio.MusicalKey
 import me.bryanoltman.listentowikipedia.audio.PentatonicMode
 import me.bryanoltman.listentowikipedia.audio.ScaleType
+import me.bryanoltman.listentowikipedia.audio.SoundFontParser
 import me.bryanoltman.listentowikipedia.model.AppSettings
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -49,6 +50,8 @@ fun AudioSettingsScreen(
     onNavigateToInstrumentPicker: (EditSoundType) -> Unit,
     onBack: () -> Unit,
 ) {
+    val context = LocalContext.current
+    val instruments = remember { SoundFontParser.bundledInstruments(context) }
     val instrumentPrograms by settings.instrumentPrograms.collectAsState()
     val musicalKey by settings.musicalKey.collectAsState()
     val scaleType by settings.scaleType.collectAsState()
@@ -78,9 +81,10 @@ fun AudioSettingsScreen(
             // Instruments section
             SectionHeader("Instruments")
             EditSoundType.entries.forEach { type ->
-                val programNumber = instrumentPrograms[type] ?: type.defaultProgram
-                val instrumentName = GeneralMidiCatalog.instruments
-                    .find { it.program == programNumber }?.name ?: "Unknown"
+                val selectedId = instrumentPrograms[type] ?: type.defaultInstrumentId
+                val instrumentName = instruments
+                    .find { it.bank == selectedId.bank && it.program == selectedId.program }
+                    ?.name ?: "Unknown"
                 ListItem(
                     headlineContent = { Text(type.displayName) },
                     supportingContent = { Text(instrumentName, color = MaterialTheme.colorScheme.onSurfaceVariant) },
