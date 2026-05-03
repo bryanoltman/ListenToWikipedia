@@ -12,8 +12,6 @@ class AppSettings private constructor(context: Context) {
     val selectedLanguageCodes: MutableStateFlow<Set<String>> =
         MutableStateFlow(prefs.getStringSet(KEY_SELECTED_LANGUAGES, DEFAULT_LANGUAGES) ?: DEFAULT_LANGUAGES)
 
-    val isMuted: MutableStateFlow<Boolean> =
-        MutableStateFlow(prefs.getBoolean(KEY_IS_MUTED, DEFAULT_IS_MUTED))
 
     // --- Setters ---
 
@@ -22,26 +20,19 @@ class AppSettings private constructor(context: Context) {
         prefs.edit().putStringSet(KEY_SELECTED_LANGUAGES, codes).apply()
     }
 
-    fun setIsMuted(value: Boolean) {
-        isMuted.value = value
-        prefs.edit().putBoolean(KEY_IS_MUTED, value).apply()
-    }
 
     // --- Reset ---
 
     fun resetToDefaults() {
         setSelectedLanguageCodes(DEFAULT_LANGUAGES)
-        setIsMuted(DEFAULT_IS_MUTED)
     }
 
     companion object {
         private const val PREFS_NAME = "listen_to_wikipedia_settings"
 
         private const val KEY_SELECTED_LANGUAGES = "selectedLanguages"
-        private const val KEY_IS_MUTED = "isMuted"
 
         private val DEFAULT_LANGUAGES = setOf("en")
-        private const val DEFAULT_IS_MUTED = false
 
         @Volatile
         private var instance: AppSettings? = null

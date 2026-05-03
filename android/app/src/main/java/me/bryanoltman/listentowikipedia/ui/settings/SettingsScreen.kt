@@ -15,12 +15,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -58,7 +56,6 @@ private fun SettingsMainPage(
     onNavigateToLanguages: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val isMuted by settings.isMuted.collectAsState()
     var showResetConfirmation by remember { mutableStateOf(false) }
 
     if (showResetConfirmation) {
@@ -98,15 +95,6 @@ private fun SettingsMainPage(
             ListItem(
                 headlineContent = { Text("Languages") },
                 modifier = Modifier.fillMaxWidth().clickable(onClick = onNavigateToLanguages),
-            )
-            ListItem(
-                headlineContent = { Text("Mute") },
-                trailingContent = {
-                    Switch(
-                        checked = isMuted,
-                        onCheckedChange = { settings.setIsMuted(it) },
-                    )
-                },
             )
             ListItem(
                 headlineContent = {
