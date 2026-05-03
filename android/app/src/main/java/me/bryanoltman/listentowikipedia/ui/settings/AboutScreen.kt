@@ -68,7 +68,7 @@ fun AboutScreen(onBack: () -> Unit) {
 
             Text(
                 "This app shows edits to Wikipedia as they happen in real time. " +
-                    "Each bubble represents a single edit to an article.",
+                        "Each bubble represents a single edit to an article.",
                 style = MaterialTheme.typography.bodyMedium,
             )
 
@@ -80,7 +80,7 @@ fun AboutScreen(onBack: () -> Unit) {
 
             Text(
                 "When a new user registers on Wikipedia, a blue banner appears at the top of the screen. " +
-                    "Tap the banner to visit their talk page and say hello.",
+                        "Tap the banner to visit their talk page and say hello.",
                 style = MaterialTheme.typography.bodyMedium,
             )
 
@@ -99,13 +99,31 @@ fun AboutScreen(onBack: () -> Unit) {
             // Credits
             Text("Credits", style = MaterialTheme.typography.titleMedium)
 
-            Text("Developed by Bryan Oltman", style = MaterialTheme.typography.bodyMedium)
+            Row {
+                Text(
+                    "Developed by ",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
 
-            LinkText(
-                text = "Inspired by Hatnote's Listen to Wikipedia",
-                url = "http://listen.hatnote.com",
-                onClick = { uriHandler.openUri(it) },
-            )
+                LinkText(
+                    "Bryan Oltman",
+                    url = "https://bryanoltman.com",
+                    onClick = { uriHandler.openUri(it) },
+                )
+            }
+
+            Row {
+                Text(
+                    "Inspired by ",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+
+                LinkText(
+                    text = "Hatnote's Listen to Wikipedia",
+                    url = "http://listen.hatnote.com",
+                    onClick = { uriHandler.openUri(it) },
+                )
+            }
 
             LinkText(
                 text = "\"GeneralUser GS\" SoundFont by S. Christian Collins, GeneralUser GS License v2.0",
@@ -136,7 +154,11 @@ private fun LegendRow(color: Color, label: String) {
                 .size(16.dp)
                 .clip(CircleShape)
                 .background(color)
-                .border(0.5.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f), CircleShape),
+                .border(
+                    0.5.dp,
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
+                    CircleShape
+                ),
         )
         Text(label, style = MaterialTheme.typography.bodySmall)
     }
