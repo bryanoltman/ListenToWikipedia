@@ -2,6 +2,7 @@ package me.bryanoltman.listentowikipedia.model
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.core.content.edit
 import kotlinx.coroutines.flow.MutableStateFlow
 
 class AppSettings private constructor(context: Context) {
@@ -17,7 +18,7 @@ class AppSettings private constructor(context: Context) {
 
     fun setSelectedLanguageCodes(codes: Set<String>) {
         selectedLanguageCodes.value = codes
-        prefs.edit().putStringSet(KEY_SELECTED_LANGUAGES, codes).apply()
+        prefs.edit { putStringSet(KEY_SELECTED_LANGUAGES, codes) }
     }
 
 
