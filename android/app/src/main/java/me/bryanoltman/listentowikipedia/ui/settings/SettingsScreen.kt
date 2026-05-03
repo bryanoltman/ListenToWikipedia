@@ -29,7 +29,7 @@ import androidx.compose.ui.Modifier
 import me.bryanoltman.listentowikipedia.audio.EditSoundType
 import me.bryanoltman.listentowikipedia.model.AppSettings
 
-enum class SettingsPage { MAIN, LANGUAGES, AUDIO, INSTRUMENT_PICKER }
+enum class SettingsPage { MAIN, LANGUAGES, AUDIO, INSTRUMENT_PICKER, ABOUT }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,6 +43,7 @@ fun SettingsScreen(settings: AppSettings, onDismiss: () -> Unit) {
                 settings = settings,
                 onNavigateToLanguages = { currentPage = SettingsPage.LANGUAGES },
                 onNavigateToAudio = { currentPage = SettingsPage.AUDIO },
+                onNavigateToAbout = { currentPage = SettingsPage.ABOUT },
                 onDismiss = onDismiss,
             )
 
@@ -65,6 +66,10 @@ fun SettingsScreen(settings: AppSettings, onDismiss: () -> Unit) {
                 settings = settings,
                 onBack = { currentPage = SettingsPage.AUDIO },
             )
+
+            SettingsPage.ABOUT -> AboutScreen(
+                onBack = { currentPage = SettingsPage.MAIN },
+            )
         }
     }
 }
@@ -75,6 +80,7 @@ private fun SettingsMainPage(
     settings: AppSettings,
     onNavigateToLanguages: () -> Unit,
     onNavigateToAudio: () -> Unit,
+    onNavigateToAbout: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     val isMuted by settings.isMuted.collectAsState()
@@ -121,6 +127,10 @@ private fun SettingsMainPage(
             ListItem(
                 headlineContent = { Text("Audio") },
                 modifier = Modifier.fillMaxWidth().clickable(onClick = onNavigateToAudio),
+            )
+            ListItem(
+                headlineContent = { Text("About") },
+                modifier = Modifier.fillMaxWidth().clickable(onClick = onNavigateToAbout),
             )
             ListItem(
                 headlineContent = { Text("Mute") },
