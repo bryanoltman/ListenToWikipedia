@@ -11,7 +11,9 @@ class AppSettings private constructor(context: Context) {
         context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
     val selectedLanguageCodes: MutableStateFlow<Set<String>> =
-        MutableStateFlow(prefs.getStringSet(KEY_SELECTED_LANGUAGES, DEFAULT_LANGUAGES) ?: DEFAULT_LANGUAGES)
+        MutableStateFlow(
+            prefs.getStringSet(KEY_SELECTED_LANGUAGES, DEFAULT_LANGUAGES) ?: DEFAULT_LANGUAGES
+        )
 
 
     fun setSelectedLanguageCodes(codes: Set<String>) {
@@ -29,7 +31,7 @@ class AppSettings private constructor(context: Context) {
 
         private const val KEY_SELECTED_LANGUAGES = "selectedLanguages"
 
-        private val DEFAULT_LANGUAGES = setOf("en")
+        private val DEFAULT_LANGUAGES = setOf(WikipediaLanguages.english.code)
 
         @Volatile
         private var instance: AppSettings? = null
