@@ -75,14 +75,13 @@ fun ContentScreen(settings: AppSettings) {
         onDispose { view.keepScreenOn = false }
     }
 
-    // Clean up resources on dispose
     DisposableEffect(Unit) {
         onDispose {
             webSocketService.disconnectAll()
         }
     }
 
-    // Lifecycle: reconnect on resume, disconnect on pause
+    // Connect to websockets on resume, disconnect on pause
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         syncConnections(webSocketService, selectedLanguageCodes)
     }
@@ -123,7 +122,6 @@ fun ContentScreen(settings: AppSettings) {
             .fillMaxSize()
             .background(AppBackground)
     ) {
-        // Bubbles canvas — fills the screen
         BubblesCanvas(
             manager = bubbleManager,
             onBubbleTap = { bubble ->
@@ -136,7 +134,6 @@ fun ContentScreen(settings: AppSettings) {
             }
         )
 
-        // Settings FAB (top-left)
         IconButton(
             onClick = { isShowingSettings = true },
             modifier = Modifier
@@ -154,7 +151,6 @@ fun ContentScreen(settings: AppSettings) {
             )
         }
 
-        // Connecting indicator (top-center)
         AnimatedVisibility(
             visible = connectedLanguages.isEmpty() && selectedLanguageCodes.isNotEmpty(),
             modifier = Modifier
@@ -176,7 +172,6 @@ fun ContentScreen(settings: AppSettings) {
             )
         }
 
-        // New user banner (top-center)
         AnimatedVisibility(
             visible = newUser != null,
             modifier = Modifier
@@ -193,7 +188,6 @@ fun ContentScreen(settings: AppSettings) {
             }
         }
 
-        // Article toast (bottom-center)
         AnimatedVisibility(
             visible = tappedBubble != null,
             modifier = Modifier
@@ -215,33 +209,11 @@ fun ContentScreen(settings: AppSettings) {
             }
         }
 
-        // Empty state
         if (bubbleManager.bubbles.isEmpty() && selectedLanguageCodes.isEmpty()) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.align(Alignment.Center)
-            ) {
-                Text(
-                    text = "\uD83C\uDF10",
-                    fontSize = 36.sp
-                )
-                Text(
-                    text = "No languages selected",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White.copy(alpha = 0.6f)
-                )
-                Text(
-                    text = "Open Settings to select at least one language.",
-                    fontSize = 14.sp,
-                    color = Color.White.copy(alpha = 0.4f)
-                )
-            }
+            EmptyScreen()
         }
     }
 
-    // Settings bottom sheet
     if (isShowingSettings) {
         ModalBottomSheet(
             onDismissRequest = { isShowingSettings = false },
@@ -252,6 +224,31 @@ fun ContentScreen(settings: AppSettings) {
                 onDismiss = { isShowingSettings = false }
             )
         }
+    }
+}
+
+@Composable
+fun EmptyScreen() {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = Modifier.align(Alignment.Center)
+    ) {
+        Text(
+            text = "\uD83C\uDF10",
+            fontSize = 36.sp
+        )
+        Text(
+            text = "No languages selected",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color.White.copy(alpha = 0.6f)
+        )
+        Text(
+            text = "Open Settings to select at least one language.",
+            fontSize = 14.sp,
+            color = Color.White.copy(alpha = 0.4f)
+        )
     }
 }
 
