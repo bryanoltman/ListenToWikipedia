@@ -33,6 +33,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
@@ -43,6 +44,9 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import me.bryanoltman.listentowikipedia.audio.EditSoundType
+import me.bryanoltman.listentowikipedia.audio.MusicalScale
+import me.bryanoltman.listentowikipedia.audio.NotePlayer
 import me.bryanoltman.listentowikipedia.model.AppSettings
 import me.bryanoltman.listentowikipedia.networking.WikipediaEvent
 import me.bryanoltman.listentowikipedia.networking.WikipediaWebSocketService
@@ -53,12 +57,14 @@ import java.net.URLEncoder
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ContentScreen(settings: AppSettings) {
+    val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
     val view = LocalView.current
     val scope = rememberCoroutineScope()
 
     val webSocketService = remember { WikipediaWebSocketService() }
     val bubbleManager = remember { BubbleManager() }
+    val notePlayer = remember { NotePlayer(context) }
 
     var isShowingSettings by remember { mutableStateOf(false) }
     var tappedBubble by remember { mutableStateOf<Bubble?>(null) }
@@ -67,6 +73,7 @@ fun ContentScreen(settings: AppSettings) {
     var newUserClearJob by remember { mutableStateOf<Job?>(null) }
 
     val selectedLanguageCodes by settings.selectedLanguageCodes.collectAsState()
+    val isMuted by settings.isMuted.collectAsState()
     val connectedLanguages by webSocketService.connectedLanguages.collectAsState()
 
     // Keep screen on
@@ -78,6 +85,7 @@ fun ContentScreen(settings: AppSettings) {
     DisposableEffect(Unit) {
         onDispose {
             webSocketService.disconnectAll()
+            notePlayer.release()
         }
     }
 
@@ -97,12 +105,35 @@ fun ContentScreen(settings: AppSettings) {
         }
     }
 
+    // Sync instrument programs
+    LaunchedEffect(Unit) {
+        settings.instrumentPrograms.collect { programs ->
+            for ((type, id) in programs) {
+                notePlayer.loadProgram(type, id.bank, id.program)
+            }
+        }
+    }
+
     // Event handling
     LaunchedEffect(Unit) {
         webSocketService.events.collect { event ->
             when (event) {
                 is WikipediaEvent.ArticleEdit -> {
                     bubbleManager.addBubble(event)
+                    if (!isMuted) {
+                        val note = MusicalScale.noteForEdit(
+                            event.changeSize,
+                            settings.currentScale()
+                        )
+                        if (note != null) {
+                            val type = if (event.changeSize > 0) {
+                                EditSoundType.ADDITION
+                            } else {
+                                EditSoundType.SUBTRACTION
+                            }
+                            notePlayer.play(note = note, type = type)
+                        }
+                    }
                 }
 
                 is WikipediaEvent.NewUser -> {
@@ -111,6 +142,13 @@ fun ContentScreen(settings: AppSettings) {
                     newUserClearJob = scope.launch {
                         delay(8_000)
                         newUser = null
+                    }
+                    if (!isMuted) {
+                        val scale = settings.currentScale()
+                        val note = scale.randomOrNull()
+                        if (note != null) {
+                            notePlayer.play(note = note, type = EditSoundType.NEW_USER)
+                        }
                     }
                 }
             }
@@ -122,6 +160,7 @@ fun ContentScreen(settings: AppSettings) {
             .fillMaxSize()
             .background(AppBackground)
     ) {
+        // Bubbles canvas — fills the screen
         BubblesCanvas(
             manager = bubbleManager,
             onBubbleTap = { bubble ->
@@ -209,8 +248,29 @@ fun ContentScreen(settings: AppSettings) {
             }
         }
 
+        // Empty state
         if (bubbleManager.bubbles.isEmpty() && selectedLanguageCodes.isEmpty()) {
-            EmptyScreen()
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.align(Alignment.Center)
+            ) {
+                Text(
+                    text = "\uD83C\uDF10",
+                    fontSize = 36.sp
+                )
+                Text(
+                    text = "No languages selected",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White.copy(alpha = 0.6f)
+                )
+                Text(
+                    text = "Open Settings to select at least one language.",
+                    fontSize = 14.sp,
+                    color = Color.White.copy(alpha = 0.4f)
+                )
+            }
         }
     }
 
@@ -224,31 +284,6 @@ fun ContentScreen(settings: AppSettings) {
                 onDismiss = { isShowingSettings = false }
             )
         }
-    }
-}
-
-@Composable
-fun EmptyScreen() {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-        modifier = Modifier.align(Alignment.Center)
-    ) {
-        Text(
-            text = "\uD83C\uDF10",
-            fontSize = 36.sp
-        )
-        Text(
-            text = "No languages selected",
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color.White.copy(alpha = 0.6f)
-        )
-        Text(
-            text = "Open Settings to select at least one language.",
-            fontSize = 14.sp,
-            color = Color.White.copy(alpha = 0.4f)
-        )
     }
 }
 

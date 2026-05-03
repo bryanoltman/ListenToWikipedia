@@ -15,35 +15,55 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import me.bryanoltman.listentowikipedia.audio.EditSoundType
 import me.bryanoltman.listentowikipedia.model.AppSettings
 
-enum class SettingsPage { MAIN, LANGUAGES }
+enum class SettingsPage { MAIN, LANGUAGES, AUDIO, INSTRUMENT_PICKER }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(settings: AppSettings, onDismiss: () -> Unit) {
     var currentPage by remember { mutableStateOf(SettingsPage.MAIN) }
+    var instrumentPickerType by remember { mutableStateOf(EditSoundType.ADDITION) }
 
     AnimatedContent(targetState = currentPage, label = "settings_nav") { page ->
         when (page) {
             SettingsPage.MAIN -> SettingsMainPage(
                 settings = settings,
                 onNavigateToLanguages = { currentPage = SettingsPage.LANGUAGES },
+                onNavigateToAudio = { currentPage = SettingsPage.AUDIO },
                 onDismiss = onDismiss,
             )
 
             SettingsPage.LANGUAGES -> LanguagesScreen(
                 settings = settings,
                 onBack = { currentPage = SettingsPage.MAIN },
+            )
+
+            SettingsPage.AUDIO -> AudioSettingsScreen(
+                settings = settings,
+                onNavigateToInstrumentPicker = { type ->
+                    instrumentPickerType = type
+                    currentPage = SettingsPage.INSTRUMENT_PICKER
+                },
+                onBack = { currentPage = SettingsPage.MAIN },
+            )
+
+            SettingsPage.INSTRUMENT_PICKER -> InstrumentPickerScreen(
+                editSoundType = instrumentPickerType,
+                settings = settings,
+                onBack = { currentPage = SettingsPage.AUDIO },
             )
         }
     }
@@ -54,8 +74,10 @@ fun SettingsScreen(settings: AppSettings, onDismiss: () -> Unit) {
 private fun SettingsMainPage(
     settings: AppSettings,
     onNavigateToLanguages: () -> Unit,
+    onNavigateToAudio: () -> Unit,
     onDismiss: () -> Unit,
 ) {
+    val isMuted by settings.isMuted.collectAsState()
     var showResetConfirmation by remember { mutableStateOf(false) }
 
     if (showResetConfirmation) {
@@ -95,6 +117,19 @@ private fun SettingsMainPage(
             ListItem(
                 headlineContent = { Text("Languages") },
                 modifier = Modifier.fillMaxWidth().clickable(onClick = onNavigateToLanguages),
+            )
+            ListItem(
+                headlineContent = { Text("Audio") },
+                modifier = Modifier.fillMaxWidth().clickable(onClick = onNavigateToAudio),
+            )
+            ListItem(
+                headlineContent = { Text("Mute") },
+                trailingContent = {
+                    Switch(
+                        checked = isMuted,
+                        onCheckedChange = { settings.setIsMuted(it) },
+                    )
+                },
             )
             ListItem(
                 headlineContent = {
