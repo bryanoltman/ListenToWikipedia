@@ -19,7 +19,9 @@ class AppSettings private constructor(context: Context) {
         context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
     val selectedLanguageCodes: MutableStateFlow<Set<String>> =
-        MutableStateFlow(prefs.getStringSet(KEY_SELECTED_LANGUAGES, DEFAULT_LANGUAGES) ?: DEFAULT_LANGUAGES)
+        MutableStateFlow(
+            prefs.getStringSet(KEY_SELECTED_LANGUAGES, DEFAULT_LANGUAGES) ?: DEFAULT_LANGUAGES
+        )
 
     val scaleType: MutableStateFlow<ScaleType> =
         MutableStateFlow(
@@ -61,7 +63,6 @@ class AppSettings private constructor(context: Context) {
     val octaveRange: MutableStateFlow<Int> =
         MutableStateFlow(prefs.getInt(KEY_OCTAVE_RANGE, DEFAULT_OCTAVE_RANGE))
 
-    // --- Setters ---
 
     fun setSelectedLanguageCodes(codes: Set<String>) {
         selectedLanguageCodes.value = codes
@@ -108,8 +109,6 @@ class AppSettings private constructor(context: Context) {
         prefs.edit { putInt(KEY_OCTAVE_RANGE, octaveRange.value) }
     }
 
-    // --- Computed ---
-
     fun currentScale(): List<Int> {
         val root = musicalKey.value.midiNote(rootOctave.value)
         val intervals = when (scaleType.value) {
@@ -119,7 +118,6 @@ class AppSettings private constructor(context: Context) {
         return MusicalScale.notes(root, intervals, octaveRange.value)
     }
 
-    // --- Reset ---
 
     fun resetToDefaults() {
         setSelectedLanguageCodes(DEFAULT_LANGUAGES)
@@ -133,15 +131,14 @@ class AppSettings private constructor(context: Context) {
         setOctaveRange(DEFAULT_OCTAVE_RANGE)
     }
 
-    // --- Serialization helpers ---
-
     /**
      * Deserializes stored instrument programs. Handles both the new format
      * `{"TYPE": {"bank": 0, "program": 8}}` and the legacy format
      * `{"TYPE": 8}` (treated as bank 0).
      */
     private fun loadInstrumentPrograms(): Map<EditSoundType, InstrumentId> {
-        val json = prefs.getString(KEY_INSTRUMENT_PROGRAMS, null) ?: return DEFAULT_INSTRUMENT_PROGRAMS
+        val json =
+            prefs.getString(KEY_INSTRUMENT_PROGRAMS, null) ?: return DEFAULT_INSTRUMENT_PROGRAMS
         return try {
             val obj = JSONObject(json)
             val result = mutableMapOf<EditSoundType, InstrumentId>()
@@ -156,6 +153,7 @@ class AppSettings private constructor(context: Context) {
                         bank = value.getInt("bank"),
                         program = value.getInt("program"),
                     )
+
                     is Number -> InstrumentId(bank = 0, program = value.toInt())
                     else -> type.defaultInstrumentId
                 }
@@ -179,7 +177,6 @@ class AppSettings private constructor(context: Context) {
 
     companion object {
         private const val PREFS_NAME = "listen_to_wikipedia_settings"
-
         private const val KEY_SELECTED_LANGUAGES = "selectedLanguages"
         private const val KEY_SCALE_CARDINALITY = "scaleCardinality"
         private const val KEY_MUSICAL_KEY = "musicalKey"
@@ -190,7 +187,7 @@ class AppSettings private constructor(context: Context) {
         private const val KEY_ROOT_OCTAVE = "rootOctave"
         private const val KEY_OCTAVE_RANGE = "octaveRange"
 
-        private val DEFAULT_LANGUAGES = setOf("en")
+        private val DEFAULT_LANGUAGES = setOf(WikipediaLanguages.english.code)
         private val DEFAULT_SCALE_TYPE = ScaleType.PENTATONIC
         private val DEFAULT_MUSICAL_KEY = MusicalKey.F_SHARP
         private val DEFAULT_HEPTATONIC_MODE = HeptatonicMode.DORIAN
