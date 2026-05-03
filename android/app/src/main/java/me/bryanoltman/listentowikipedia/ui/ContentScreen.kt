@@ -82,7 +82,6 @@ fun ContentScreen(settings: AppSettings) {
         onDispose { view.keepScreenOn = false }
     }
 
-    // Clean up resources on dispose
     DisposableEffect(Unit) {
         onDispose {
             webSocketService.disconnectAll()
@@ -90,7 +89,7 @@ fun ContentScreen(settings: AppSettings) {
         }
     }
 
-    // Lifecycle: reconnect on resume, disconnect on pause
+    // Connect to websockets on resume, disconnect on pause
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         syncConnections(webSocketService, selectedLanguageCodes)
     }
@@ -174,7 +173,6 @@ fun ContentScreen(settings: AppSettings) {
             }
         )
 
-        // Settings FAB (top-left)
         IconButton(
             onClick = { isShowingSettings = true },
             modifier = Modifier
@@ -192,7 +190,6 @@ fun ContentScreen(settings: AppSettings) {
             )
         }
 
-        // Connecting indicator (top-center)
         AnimatedVisibility(
             visible = connectedLanguages.isEmpty() && selectedLanguageCodes.isNotEmpty(),
             modifier = Modifier
@@ -214,7 +211,6 @@ fun ContentScreen(settings: AppSettings) {
             )
         }
 
-        // New user banner (top-center)
         AnimatedVisibility(
             visible = newUser != null,
             modifier = Modifier
@@ -231,7 +227,6 @@ fun ContentScreen(settings: AppSettings) {
             }
         }
 
-        // Article toast (bottom-center)
         AnimatedVisibility(
             visible = tappedBubble != null,
             modifier = Modifier
@@ -279,7 +274,6 @@ fun ContentScreen(settings: AppSettings) {
         }
     }
 
-    // Settings bottom sheet
     if (isShowingSettings) {
         ModalBottomSheet(
             onDismissRequest = { isShowingSettings = false },

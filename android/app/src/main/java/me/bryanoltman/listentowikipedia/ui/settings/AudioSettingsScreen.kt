@@ -78,7 +78,6 @@ fun AudioSettingsScreen(
                 .padding(padding)
                 .verticalScroll(rememberScrollState()),
         ) {
-            // Instruments section
             SectionHeader("Instruments")
             EditSoundType.entries.forEach { type ->
                 val selectedId = instrumentPrograms[type] ?: type.defaultInstrumentId
@@ -87,15 +86,20 @@ fun AudioSettingsScreen(
                     ?.name ?: "Unknown"
                 ListItem(
                     headlineContent = { Text(type.displayName) },
-                    supportingContent = { Text(instrumentName, color = MaterialTheme.colorScheme.onSurfaceVariant) },
-                    modifier = Modifier.fillMaxWidth().clickable { onNavigateToInstrumentPicker(type) },
+                    supportingContent = {
+                        Text(
+                            instrumentName,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onNavigateToInstrumentPicker(type) },
                 )
             }
 
-            // Scale section
             SectionHeader("Scale")
 
-            // Key picker
             DropdownPicker(
                 label = "Key",
                 selectedValue = musicalKey.displayName,
@@ -105,7 +109,6 @@ fun AudioSettingsScreen(
                 },
             )
 
-            // Scale type picker
             DropdownPicker(
                 label = "Scale Type",
                 selectedValue = scaleType.displayName,
@@ -115,7 +118,6 @@ fun AudioSettingsScreen(
                 },
             )
 
-            // Mode picker (conditional)
             if (scaleType == ScaleType.PENTATONIC) {
                 DropdownPicker(
                     label = "Mode",
@@ -136,7 +138,6 @@ fun AudioSettingsScreen(
                 )
             }
 
-            // Root octave stepper
             StepperRow(
                 label = "Root Octave",
                 value = rootOctave,
@@ -144,7 +145,6 @@ fun AudioSettingsScreen(
                 onValueChange = { settings.setRootOctave(it) },
             )
 
-            // Octave range stepper
             StepperRow(
                 label = "Octave Range",
                 value = octaveRange,
@@ -178,7 +178,9 @@ private fun DropdownPicker(
     ExposedDropdownMenuBox(
         expanded = expanded,
         onExpandedChange = { expanded = it },
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp),
     ) {
         TextField(
             value = selectedValue,
@@ -187,7 +189,9 @@ private fun DropdownPicker(
             label = { Text(label) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             colors = ExposedDropdownMenuDefaults.textFieldColors(),
-            modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
+            modifier = Modifier
+                .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
+                .fillMaxWidth(),
         )
         ExposedDropdownMenu(
             expanded = expanded,
@@ -215,7 +219,9 @@ private fun StepperRow(
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
     ) {
         Text("$label: $value", style = MaterialTheme.typography.bodyLarge)
         Spacer(modifier = Modifier.weight(1f))
