@@ -190,7 +190,7 @@ class AppSettings private constructor(context: Context) {
         private val DEFAULT_LANGUAGES = setOf(WikipediaLanguages.english.code)
         private val DEFAULT_SCALE_TYPE = ScaleType.PENTATONIC
         private val DEFAULT_MUSICAL_KEY = MusicalKey.F_SHARP
-        private val DEFAULT_HEPTATONIC_MODE = HeptatonicMode.DORIAN
+        private val DEFAULT_HEPTATONIC_MODE = HeptatonicMode.IONIAN
         private val DEFAULT_PENTATONIC_MODE = PentatonicMode.MAJOR_PENTATONIC
         private const val DEFAULT_IS_MUTED = false
         private val DEFAULT_INSTRUMENT_PROGRAMS = mapOf(
