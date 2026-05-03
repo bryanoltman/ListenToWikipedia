@@ -63,7 +63,6 @@ class AppSettings private constructor(context: Context) {
     val octaveRange: MutableStateFlow<Int> =
         MutableStateFlow(prefs.getInt(KEY_OCTAVE_RANGE, DEFAULT_OCTAVE_RANGE))
 
-
     fun setSelectedLanguageCodes(codes: Set<String>) {
         selectedLanguageCodes.value = codes
         prefs.edit { putStringSet(KEY_SELECTED_LANGUAGES, codes) }
@@ -117,7 +116,6 @@ class AppSettings private constructor(context: Context) {
         }
         return MusicalScale.notes(root, intervals, octaveRange.value)
     }
-
 
     fun resetToDefaults() {
         setSelectedLanguageCodes(DEFAULT_LANGUAGES)
