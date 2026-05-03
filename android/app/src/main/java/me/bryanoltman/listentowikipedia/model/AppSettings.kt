@@ -14,15 +14,11 @@ class AppSettings private constructor(context: Context) {
         MutableStateFlow(prefs.getStringSet(KEY_SELECTED_LANGUAGES, DEFAULT_LANGUAGES) ?: DEFAULT_LANGUAGES)
 
 
-    // --- Setters ---
-
     fun setSelectedLanguageCodes(codes: Set<String>) {
         selectedLanguageCodes.value = codes
         prefs.edit { putStringSet(KEY_SELECTED_LANGUAGES, codes) }
     }
 
-
-    // --- Reset ---
 
     fun resetToDefaults() {
         setSelectedLanguageCodes(DEFAULT_LANGUAGES)
