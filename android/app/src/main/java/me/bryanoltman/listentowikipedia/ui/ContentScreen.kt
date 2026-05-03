@@ -6,11 +6,21 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -25,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
@@ -32,15 +43,16 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import me.bryanoltman.listentowikipedia.model.AppSettings
 import me.bryanoltman.listentowikipedia.networking.WikipediaEvent
 import me.bryanoltman.listentowikipedia.networking.WikipediaWebSocketService
+import me.bryanoltman.listentowikipedia.ui.settings.SettingsScreen
 import me.bryanoltman.listentowikipedia.ui.theme.AppBackground
 import java.net.URLEncoder
 
-private val DEFAULT_LANGUAGES = setOf("en")
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ContentScreen() {
+fun ContentScreen(settings: AppSettings) {
     val uriHandler = LocalUriHandler.current
     val view = LocalView.current
     val scope = rememberCoroutineScope()
@@ -48,31 +60,45 @@ fun ContentScreen() {
     val webSocketService = remember { WikipediaWebSocketService() }
     val bubbleManager = remember { BubbleManager() }
 
+    var isShowingSettings by remember { mutableStateOf(false) }
     var tappedBubble by remember { mutableStateOf<Bubble?>(null) }
     var tapClearJob by remember { mutableStateOf<Job?>(null) }
     var newUser by remember { mutableStateOf<WikipediaEvent.NewUser?>(null) }
     var newUserClearJob by remember { mutableStateOf<Job?>(null) }
 
+    val selectedLanguageCodes by settings.selectedLanguageCodes.collectAsState()
     val connectedLanguages by webSocketService.connectedLanguages.collectAsState()
 
+    // Keep screen on
     DisposableEffect(Unit) {
         view.keepScreenOn = true
+        onDispose { view.keepScreenOn = false }
+    }
+
+    // Clean up resources on dispose
+    DisposableEffect(Unit) {
         onDispose {
-            view.keepScreenOn = false
             webSocketService.disconnectAll()
         }
     }
 
+    // Lifecycle: reconnect on resume, disconnect on pause
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
-        for (lang in DEFAULT_LANGUAGES) {
-            webSocketService.connect(lang)
-        }
+        syncConnections(webSocketService, selectedLanguageCodes)
     }
 
     LifecycleEventEffect(Lifecycle.Event.ON_PAUSE) {
         webSocketService.disconnectAll()
     }
 
+    // Sync language connections when selection changes
+    LaunchedEffect(Unit) {
+        settings.selectedLanguageCodes.collect { codes ->
+            syncConnections(webSocketService, codes)
+        }
+    }
+
+    // Event handling
     LaunchedEffect(Unit) {
         webSocketService.events.collect { event ->
             when (event) {
@@ -97,6 +123,7 @@ fun ContentScreen() {
             .fillMaxSize()
             .background(AppBackground)
     ) {
+        // Bubbles canvas — fills the screen
         BubblesCanvas(
             manager = bubbleManager,
             onBubbleTap = { bubble ->
@@ -109,9 +136,27 @@ fun ContentScreen() {
             }
         )
 
-        // Connecting indicator
+        // Settings FAB (top-left)
+        IconButton(
+            onClick = { isShowingSettings = true },
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(start = 16.dp, top = 48.dp)
+                .background(
+                    color = Color.Black.copy(alpha = 0.5f),
+                    shape = CircleShape
+                )
+        ) {
+            Icon(
+                imageVector = Icons.Default.Settings,
+                contentDescription = "Settings",
+                tint = Color.White
+            )
+        }
+
+        // Connecting indicator (top-center)
         AnimatedVisibility(
-            visible = connectedLanguages.isEmpty(),
+            visible = connectedLanguages.isEmpty() && selectedLanguageCodes.isNotEmpty(),
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .padding(top = 50.dp),
@@ -131,7 +176,7 @@ fun ContentScreen() {
             )
         }
 
-        // New user banner
+        // New user banner (top-center)
         AnimatedVisibility(
             visible = newUser != null,
             modifier = Modifier
@@ -148,7 +193,7 @@ fun ContentScreen() {
             }
         }
 
-        // Article toast
+        // Article toast (bottom-center)
         AnimatedVisibility(
             visible = tappedBubble != null,
             modifier = Modifier
@@ -161,9 +206,68 @@ fun ContentScreen() {
                 ArticleToast(
                     title = bubble.title,
                     articleUrl = bubble.articleUrl,
-                    onTap = { bubble.articleUrl?.let { uriHandler.openUri(it) } }
+                    onTap = {
+                        bubble.articleUrl?.let { url ->
+                            uriHandler.openUri(url)
+                        }
+                    }
                 )
             }
+        }
+
+        // Empty state
+        if (bubbleManager.bubbles.isEmpty() && selectedLanguageCodes.isEmpty()) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.align(Alignment.Center)
+            ) {
+                Text(
+                    text = "\uD83C\uDF10",
+                    fontSize = 36.sp
+                )
+                Text(
+                    text = "No languages selected",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White.copy(alpha = 0.6f)
+                )
+                Text(
+                    text = "Open Settings to select at least one language.",
+                    fontSize = 14.sp,
+                    color = Color.White.copy(alpha = 0.4f)
+                )
+            }
+        }
+    }
+
+    // Settings bottom sheet
+    if (isShowingSettings) {
+        ModalBottomSheet(
+            onDismissRequest = { isShowingSettings = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        ) {
+            SettingsScreen(
+                settings = settings,
+                onDismiss = { isShowingSettings = false }
+            )
+        }
+    }
+}
+
+private fun syncConnections(
+    service: WikipediaWebSocketService,
+    selected: Set<String>
+) {
+    val connected = service.connectedLanguages.value
+    for (lang in connected) {
+        if (lang !in selected) {
+            service.disconnect(lang)
+        }
+    }
+    for (lang in selected) {
+        if (lang !in connected) {
+            service.connect(lang)
         }
     }
 }
