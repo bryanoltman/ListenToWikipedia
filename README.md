@@ -13,10 +13,10 @@ The app connects to the [Wikimedia EventStreams](https://wikitech.wikimedia.org/
 
 ## Platforms
 
-| Platform         | Directory          | Status    |
-| ---------------- | ------------------ | --------- |
-| iOS, macOS, tvOS | [`apple/`](apple/) | Available |
-| Android          | `android/`         | Planned   |
+| Platform         | Directory            | Status    |
+| ---------------- | -------------------- | --------- |
+| iOS, macOS, tvOS | [`apple/`](apple/)   | Available |
+| Android          | `android/`(android/) | Available |
 
 See each platform directory for build instructions and platform-specific details.
 
