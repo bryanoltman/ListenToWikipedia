@@ -4,13 +4,9 @@ struct AboutView: View {
   @Environment(\.openURL) private var openURL
 
   var body: some View {
-    #if os(iOS) || os(tvOS)
-      ScrollView {
-        bodyContent
-      }
-    #else
+    ScrollView {
       bodyContent
-    #endif
+    }
   }
 
   private var bodyContent: some View {
