@@ -3,6 +3,7 @@
 
     <style name="Theme.ListenToWikipedia" parent="android:Theme.Material.Light.NoActionBar">
         <!-- Splash screen (Android 12+) -->
+        <item name="android:windowLightStatusBar">false</item>
         <item name="android:windowSplashScreenBackground">@color/splash_background</item>
         <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_foreground</item>
     </style>
