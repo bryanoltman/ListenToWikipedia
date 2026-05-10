@@ -57,45 +57,37 @@ struct AudioSettingsView: View {
 
   #if os(macOS)
     private var macOSBody: some View {
-      VStack(alignment: .leading, spacing: 16) {
-        GroupBox("Instruments") {
-          Form {
-            ForEach(EditSoundType.allCases) { type in
-              LabeledContent(type.displayName) {
-                Button(instrumentName(for: type)) {
-                  activeInstrumentPicker = type
-                }
-                .popover(
-                  isPresented: Binding(
-                    get: { activeInstrumentPicker == type },
-                    set: { if !$0 { activeInstrumentPicker = nil } }
-                  )
-                ) {
-                  InstrumentPickerView(
-                    selection: Binding<InstrumentId>(
-                      get: { settings.instrumentPrograms[type] ?? type.defaultInstrumentId },
-                      set: { settings.instrumentPrograms[type] = $0 }
-                    ),
-                    instrumentsByBank: instrumentsByBank
-                  )
-                  .frame(width: 300, height: 500)
-                }
+      Form {
+        Section("Instruments") {
+          ForEach(EditSoundType.allCases) { type in
+            LabeledContent(type.displayName) {
+              Button(instrumentName(for: type)) {
+                activeInstrumentPicker = type
+              }
+              .popover(
+                isPresented: Binding(
+                  get: { activeInstrumentPicker == type },
+                  set: { if !$0 { activeInstrumentPicker = nil } }
+                )
+              ) {
+                InstrumentPickerView(
+                  selection: Binding<InstrumentId>(
+                    get: { settings.instrumentPrograms[type] ?? type.defaultInstrumentId },
+                    set: { settings.instrumentPrograms[type] = $0 }
+                  ),
+                  instrumentsByBank: instrumentsByBank
+                )
+                .frame(width: 300, height: 500)
               }
             }
           }
-          .padding(.vertical, 4)
         }
 
-        GroupBox("Scale") {
-          Form {
-            scaleControls
-          }
-          .padding(.vertical, 4)
+        Section("Scale") {
+          scaleControls
         }
       }
-      .padding([.bottom, .trailing, .leading], 20)
-      .padding([.top], 10)
-      .fixedSize(horizontal: false, vertical: true)
+      .formStyle(.grouped)
     }
   #endif
 
