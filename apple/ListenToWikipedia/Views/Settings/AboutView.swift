@@ -4,10 +4,84 @@ struct AboutView: View {
   @Environment(\.openURL) private var openURL
 
   var body: some View {
-    ScrollView {
-      bodyContent
-    }
+    #if os(macOS)
+      macOSBody
+    #else
+      ScrollView {
+        bodyContent
+      }
+    #endif
   }
+
+  #if os(macOS)
+    private var macOSBody: some View {
+      Form {
+        Section("How It Works") {
+          VStack(alignment: .leading, spacing: 12) {
+            Text(
+              "This app shows edits to Wikipedia as they happen in real time. "
+                + "Each bubble represents a single edit to an article."
+            )
+
+            VStack(alignment: .leading, spacing: 8) {
+              legendRow(color: .white, label: "Registered user edit")
+              legendRow(color: .dotGreen, label: "Anonymous edit")
+              legendRow(color: .dotPurple, label: "Bot edit")
+            }
+
+            Text(
+              "When a new user registers on Wikipedia, a blue banner appears at the top of the screen. "
+                + "Tap the banner to visit their talk page and say hello."
+            )
+
+            Text(
+              "Larger bubbles represent larger edits. Light bubbles are additions; dark bubbles are removals."
+            )
+
+            Text(
+              "Tap a bubble to see the article title, then tap the title to open the article."
+            )
+          }
+          .frame(maxWidth: .infinity, alignment: .leading)
+        }
+
+        Section {
+          VStack(alignment: .leading, spacing: 12) {
+            Text("Developed by Bryan Oltman")
+
+            Link(destination: URL(string: "http://listen.hatnote.com")!) {
+              Text("Inspired by Hatnote's Listen to Wikipedia")
+                .multilineTextAlignment(.leading)
+            }
+
+            Link(
+              destination: URL(
+                string: "https://www.schristiancollins.com/generaluser"
+              )!
+            ) {
+              Text(
+                "\"GeneralUser GS\" SoundFont by S. Christian Collins, GeneralUser GS License v2.0"
+              )
+              .multilineTextAlignment(.leading)
+            }
+          }
+          .frame(maxWidth: .infinity, alignment: .leading)
+        } header: {
+          Text("Credits")
+        } footer: {
+          if let version = Bundle.main.infoDictionary?[
+            "CFBundleShortVersionString"
+          ] as? String,
+            let build = Bundle.main.infoDictionary?["CFBundleVersion"]
+              as? String
+          {
+            Text("Version \(version) (\(build))")
+          }
+        }
+      }
+      .formStyle(.grouped)
+    }
+  #endif
 
   private var bodyContent: some View {
     VStack(alignment: .leading, spacing: 32) {
@@ -75,7 +149,9 @@ struct AboutView: View {
 
         #if os(iOS) || os(macOS)
           Button {
-            if let url = URL(string: "https://www.schristiancollins.com/generaluser") {
+            if let url = URL(
+              string: "https://www.schristiancollins.com/generaluser"
+            ) {
               openURL(url)
             }
           } label: {
@@ -97,7 +173,9 @@ struct AboutView: View {
       Divider()
 
       VStack(alignment: .leading, spacing: 4) {
-        if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String,
+        if let version = Bundle.main.infoDictionary?[
+          "CFBundleShortVersionString"
+        ] as? String,
           let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String
         {
           Text("Version \(version) (\(build))")
