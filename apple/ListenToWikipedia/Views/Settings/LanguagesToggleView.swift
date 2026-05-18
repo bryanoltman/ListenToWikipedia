@@ -3,13 +3,26 @@ import SwiftUI
 struct LanguagesToggleView: View {
   @EnvironmentObject private var settings: AppSettings
 
-  var body: some View {
-    List {
-      ForEach(WikipediaLanguage.all) { language in
-        Toggle(language.name, isOn: languageToggleBinding(for: language))
-      }
+  private var languageToggles: some View {
+    ForEach(WikipediaLanguage.all) { language in
+      Toggle(language.name, isOn: languageToggleBinding(for: language))
     }
-    .navigationTitle("Languages")
+  }
+
+  var body: some View {
+    #if os(macOS)
+      Form {
+        Section {
+          languageToggles
+        }
+      }
+      .formStyle(.grouped)
+    #else
+      List {
+        languageToggles
+      }
+      .navigationTitle("Languages")
+    #endif
   }
 
   private func languageToggleBinding(for language: WikipediaLanguage) -> Binding<Bool> {
