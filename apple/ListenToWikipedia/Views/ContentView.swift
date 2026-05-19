@@ -16,7 +16,9 @@ struct ContentView: View {
   @State private var newUser: WikipediaNewUser?
   @State private var newUserClearTask: Task<Void, Never>?
   @Environment(\.openURL) private var openURL
-  @State private var notePlayer = NotePlayer(programs: AppSettings.shared.instrumentPrograms)
+  @State private var notePlayer = NotePlayer(
+    programs: AppSettings.shared.instrumentPrograms
+  )
 
   var body: some View {
     BubblesView(manager: manager) { bubble in
@@ -52,7 +54,9 @@ struct ContentView: View {
       }
     }
     .overlay(alignment: .top) {
-      if service.connectedLanguages.isEmpty && !settings.selectedLanguageCodes.isEmpty {
+      if service.connectedLanguages.isEmpty
+        && !settings.selectedLanguageCodes.isEmpty
+      {
         Text("Connecting...")
           .font(.caption)
           .foregroundColor(.white.opacity(0.7))
@@ -95,9 +99,13 @@ struct ContentView: View {
       case .articleEdit(let edit):
         manager.addBubble(from: edit)
         if !settings.isMuted,
-          let note = MusicalScale.noteForEdit(changeSize: edit.changeSize, in: settings.currentScale)
+          let note = MusicalScale.noteForEdit(
+            changeSize: edit.changeSize,
+            in: settings.currentScale
+          )
         {
-          let type: EditSoundType = edit.changeSize > 0 ? .addition : .subtraction
+          let type: EditSoundType =
+            edit.changeSize > 0 ? .addition : .subtraction
           notePlayer.play(note: note, type: type)
         }
       case .newUser(let user):
@@ -109,7 +117,10 @@ struct ContentView: View {
     }
   }
 
-  private static let defaultSpring = Animation.spring(response: 0.3, dampingFraction: 0.7)
+  private static let defaultSpring = Animation.spring(
+    response: 0.3,
+    dampingFraction: 0.7
+  )
 
   @ViewBuilder
   private var settingsButton: some View {
