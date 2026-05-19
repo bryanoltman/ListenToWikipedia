@@ -140,7 +140,9 @@ class BubbleManager: ObservableObject {
       labelColor: label,
       labelShadowColor: shadow,
       size: BubblePhysics.size(
-        forChangeSize: edit.changeSize, maxSize: max(viewSize.width, viewSize.height) * 2.0 / 3.0),
+        forChangeSize: edit.changeSize,
+        maxSize: max(viewSize.width, viewSize.height) * 2.0 / 3.0
+      ),
       title: edit.pageTitle,
       articleURL: Self.articleURL(
         language: edit.language,
@@ -153,7 +155,8 @@ class BubbleManager: ObservableObject {
 
   /// Returns the topmost bubble at `point`, or `nil` if none was hit.
   @MainActor
-  func bubble(at point: CGPoint, time: TimeInterval, in size: CGSize) -> Bubble? {
+  func bubble(at point: CGPoint, time: TimeInterval, in size: CGSize) -> Bubble?
+  {
     for bubble in bubbles.reversed() {
       let age = time - bubble.creationTime
       guard age >= 0 else { continue }
@@ -188,7 +191,8 @@ class BubbleManager: ObservableObject {
   /// Starts a repeating 1-second timer that prunes expired bubbles.
   func startPruning() {
     pruneTimer?.invalidate()
-    pruneTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+    pruneTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) {
+      [weak self] _ in
       Task { @MainActor [weak self] in
         self?.pruneExpiredBubbles()
       }
@@ -211,7 +215,9 @@ class BubbleManager: ObservableObject {
   }
   /// Returns (fill, label, shadow) colors for a bubble.
   /// Additions: bright fill, adaptive label. Deletions: dark fill, bright label.
-  private func bubbleColors(for edit: WikipediaArticleEdit) -> (fill: Color, label: Color, shadow: Color) {
+  private func bubbleColors(for edit: WikipediaArticleEdit) -> (
+    fill: Color, label: Color, shadow: Color
+  ) {
     let isDeletion = edit.changeSize < 0
     if edit.isBot {
       return isDeletion
@@ -309,7 +315,9 @@ struct BubblesView: View {
             // --- Filled circle with subtle shadow for depth between overlapping bubbles ---
             var bubbleContext = context
             bubbleContext.opacity = opacity
-            bubbleContext.addFilter(.shadow(color: .black.opacity(0.3), radius: 4, x: 0, y: 0))
+            bubbleContext.addFilter(
+              .shadow(color: .black.opacity(0.3), radius: 4, x: 0, y: 0)
+            )
 
             let drawSize = bubble.size * scale * tapScaleMultiplier
             let rect = CGRect(
@@ -318,7 +326,10 @@ struct BubblesView: View {
               width: drawSize,
               height: drawSize
             )
-            bubbleContext.fill(Path(ellipseIn: rect), with: .color(bubble.color))
+            bubbleContext.fill(
+              Path(ellipseIn: rect),
+              with: .color(bubble.color)
+            )
 
             // --- Tap flash overlay ---
             if tapFlash > 0 {
@@ -330,7 +341,8 @@ struct BubblesView: View {
             // --- Tap ripple ---
             if let tapAge,
               let ring = BubblePhysics.tapRippleState(
-                tapAge: tapAge, baseRadius: baseRadius
+                tapAge: tapAge,
+                baseRadius: baseRadius
               )
             {
               var tapRingContext = context
@@ -367,14 +379,22 @@ struct BubblesView: View {
                 guard !gestureActive else { return }
                 gestureActive = true
                 let now = Date.timeIntervalSinceReferenceDate
-                if let bubble = manager.bubble(at: value.startLocation, time: now, in: geometry.size) {
+                if let bubble = manager.bubble(
+                  at: value.startLocation,
+                  time: now,
+                  in: geometry.size
+                ) {
                   manager.recordTap(on: bubble)
                 }
               }
               .onEnded { value in
                 gestureActive = false
                 let now = Date.timeIntervalSinceReferenceDate
-                if let bubble = manager.bubble(at: value.startLocation, time: now, in: geometry.size) {
+                if let bubble = manager.bubble(
+                  at: value.startLocation,
+                  time: now,
+                  in: geometry.size
+                ) {
                   onTap(bubble)
                 }
               }

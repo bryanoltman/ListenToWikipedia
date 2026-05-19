@@ -3,8 +3,12 @@ import SwiftUI
 struct AudioSettingsView: View {
   @EnvironmentObject private var settings: AppSettings
 
-  private var instruments: [SoundFontInstrument] { SoundFontParser.bundledInstruments }
-  private var instrumentsByBank: [(bank: UInt16, instruments: [SoundFontInstrument])] {
+  private var instruments: [SoundFontInstrument] {
+    SoundFontParser.bundledInstruments
+  }
+  private var instrumentsByBank:
+    [(bank: UInt16, instruments: [SoundFontInstrument])]
+  {
     SoundFontParser.bundledInstrumentsByBank
   }
   #if os(macOS)
@@ -27,7 +31,9 @@ struct AudioSettingsView: View {
         Section("Instruments") {
           ForEach(EditSoundType.allCases) { type in
             let selection = Binding<InstrumentId>(
-              get: { settings.instrumentPrograms[type] ?? type.defaultInstrumentId },
+              get: {
+                settings.instrumentPrograms[type] ?? type.defaultInstrumentId
+              },
               set: { settings.instrumentPrograms[type] = $0 }
             )
             NavigationLink {
@@ -58,6 +64,10 @@ struct AudioSettingsView: View {
   #if os(macOS)
     private var macOSBody: some View {
       Form {
+        Section("Playback") {
+          Toggle("Mute", isOn: $settings.isMuted)
+        }
+
         Section("Instruments") {
           ForEach(EditSoundType.allCases) { type in
             LabeledContent(type.displayName) {
@@ -72,7 +82,10 @@ struct AudioSettingsView: View {
               ) {
                 InstrumentPickerView(
                   selection: Binding<InstrumentId>(
-                    get: { settings.instrumentPrograms[type] ?? type.defaultInstrumentId },
+                    get: {
+                      settings.instrumentPrograms[type]
+                        ?? type.defaultInstrumentId
+                    },
                     set: { settings.instrumentPrograms[type] = $0 }
                   ),
                   instrumentsByBank: instrumentsByBank
@@ -96,7 +109,9 @@ struct AudioSettingsView: View {
       Section("Instruments") {
         ForEach(EditSoundType.allCases) { type in
           let selection = Binding<InstrumentId>(
-            get: { settings.instrumentPrograms[type] ?? type.defaultInstrumentId },
+            get: {
+              settings.instrumentPrograms[type] ?? type.defaultInstrumentId
+            },
             set: { settings.instrumentPrograms[type] = $0 }
           )
           NavigationLink {

@@ -2,6 +2,8 @@ import SwiftUI
 
 struct AboutView: View {
   @Environment(\.openURL) private var openURL
+  @EnvironmentObject private var settings: AppSettings
+  @State private var isShowingResetConfirmation = false
 
   var body: some View {
     #if os(macOS)
@@ -76,6 +78,21 @@ struct AboutView: View {
               as? String
           {
             Text("Version \(version) (\(build))")
+          }
+        }
+
+        Section {
+          Button("Reset to Defaults", role: .destructive) {
+            isShowingResetConfirmation = true
+          }
+          .confirmationDialog(
+            "Reset all settings to their defaults?",
+            isPresented: $isShowingResetConfirmation,
+            titleVisibility: .visible
+          ) {
+            Button("Reset", role: .destructive) {
+              settings.resetToDefaults()
+            }
           }
         }
       }

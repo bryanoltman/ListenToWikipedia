@@ -3,7 +3,6 @@ import SwiftUI
 #if os(macOS)
   /// Sidebar sections for the macOS master-detail settings layout.
   private enum SettingsSection: String, CaseIterable, Identifiable {
-    case general
     case languages
     case audio
     case about
@@ -12,7 +11,6 @@ import SwiftUI
 
     var title: String {
       switch self {
-      case .general: return "General"
       case .languages: return "Languages"
       case .audio: return "Audio"
       case .about: return "About"
@@ -21,7 +19,6 @@ import SwiftUI
 
     var icon: String {
       switch self {
-      case .general: return "gearshape"
       case .languages: return "globe"
       case .audio: return "music.note"
       case .about: return "info.circle"
@@ -36,7 +33,7 @@ struct SettingsView: View {
   @State private var isShowingResetConfirmation = false
 
   #if os(macOS)
-    @State private var selectedSection = SettingsSection.general
+    @State private var selectedSection = SettingsSection.languages
   #endif
 
   var body: some View {
@@ -84,8 +81,6 @@ struct SettingsView: View {
     @ViewBuilder
     private func detailContent(for section: SettingsSection) -> some View {
       switch section {
-      case .general:
-        GeneralSettingsView()
       case .languages:
         LanguagesToggleView()
       case .audio:

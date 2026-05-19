@@ -32,7 +32,11 @@ class AppSettings: ObservableObject {
     static let rootOctave = 1
     static let octaveRange = 3
     static var instrumentPrograms: [EditSoundType: InstrumentId] {
-      Dictionary(uniqueKeysWithValues: EditSoundType.allCases.map { ($0, $0.defaultInstrumentId) })
+      Dictionary(
+        uniqueKeysWithValues: EditSoundType.allCases.map {
+          ($0, $0.defaultInstrumentId)
+        }
+      )
     }
   }
 
@@ -70,7 +74,8 @@ class AppSettings: ObservableObject {
     let modeRaw =
       defaults.string(forKey: Keys.musicalMode)
       ?? Defaults.heptatonicMode.rawValue
-    heptatonicMode = HeptatonicMode(rawValue: modeRaw) ?? Defaults.heptatonicMode
+    heptatonicMode =
+      HeptatonicMode(rawValue: modeRaw) ?? Defaults.heptatonicMode
 
     let pentatonicModeRaw =
       defaults.string(forKey: Keys.pentatonicMode)
@@ -110,7 +115,10 @@ class AppSettings: ObservableObject {
           let bank = entry["bank"],
           let program = entry["program"]
         {
-          programs[type] = InstrumentId(bank: UInt16(clamping: bank), program: UInt8(clamping: program))
+          programs[type] = InstrumentId(
+            bank: UInt16(clamping: bank),
+            program: UInt8(clamping: program)
+          )
         } else {
           programs[type] = type.defaultInstrumentId
         }
@@ -129,8 +137,12 @@ class AppSettings: ObservableObject {
     defaults.set(scaleType.rawValue, forKey: Keys.scaleCardinality)
     defaults.set(pentatonicMode.rawValue, forKey: Keys.pentatonicMode)
     defaults.set(isMuted, forKey: Keys.isMuted)
-    let encoded = instrumentPrograms.reduce(into: [String: [String: Int]]()) { dict, pair in
-      dict[pair.key.rawValue] = ["bank": Int(pair.value.bank), "program": Int(pair.value.program)]
+    let encoded = instrumentPrograms.reduce(into: [String: [String: Int]]()) {
+      dict,
+      pair in
+      dict[pair.key.rawValue] = [
+        "bank": Int(pair.value.bank), "program": Int(pair.value.program),
+      ]
     }
     defaults.set(encoded, forKey: Keys.instrumentPrograms)
     defaults.set(min(max(rootOctave, 0), 8), forKey: Keys.rootOctave)
